@@ -99,10 +99,11 @@ create table if not exists public.admin_users (
 
 create table if not exists public.analytics_events (
   id uuid primary key default gen_random_uuid(),
-  event_name text not null check (event_name in ('landing_view', 'create_started', 'offer_view')),
+  event_name text not null check (event_name in ('landing_view', 'create_started', 'offer_view', 'create_step_view')),
   visitor_id text,
   user_id uuid references auth.users(id) on delete set null,
   love_page_id uuid references public.love_pages(id) on delete set null,
+  step_number int,
   created_at timestamptz not null default now()
 );
 
@@ -113,6 +114,14 @@ create table if not exists public.funnel_splits (
   create_started int not null default 0,
   offer_views int not null default 0,
   purchases int not null default 0,
+  step_1 int not null default 0,
+  step_2 int not null default 0,
+  step_3 int not null default 0,
+  step_4 int not null default 0,
+  step_5 int not null default 0,
+  step_6 int not null default 0,
+  step_7 int not null default 0,
+  step_8 int not null default 0,
   created_at timestamptz not null default now()
 );
 
@@ -127,6 +136,7 @@ create index if not exists payments_love_page_id_idx on public.payments(love_pag
 create index if not exists analytics_events_event_name_idx on public.analytics_events(event_name);
 create index if not exists analytics_events_visitor_id_idx on public.analytics_events(visitor_id);
 create index if not exists analytics_events_created_at_idx on public.analytics_events(created_at);
+create index if not exists analytics_events_step_number_idx on public.analytics_events(step_number);
 create index if not exists funnel_splits_created_at_idx on public.funnel_splits(created_at desc);
 
 create table if not exists public.draft_uploads (

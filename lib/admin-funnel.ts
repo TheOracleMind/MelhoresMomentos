@@ -5,11 +5,13 @@ export type FunnelSnapshot = {
   createStarted: number;
   offerViews: number;
   purchases: number;
+  createSteps: number[];
 };
 
 type AnalyticsEvent = {
   event_name: string;
   visitor_id: string | null;
+  step_number?: number | null;
   created_at: string;
 };
 
@@ -21,7 +23,7 @@ type PaymentEvent = {
 export async function getCurrentFunnelSnapshot(since?: string | null): Promise<FunnelSnapshot> {
   const admin = createSupabaseAdminClient();
   const [{ data: events }, { data: payments }] = await Promise.all([
-    admin.from("analytics_events").select("event_name, visitor_id, created_at"),
+    admin.from("analytics_events").select("event_name, visitor_id, step_number, created_at"),
     admin.from("payments").select("id, paid_at")
   ]);
 
@@ -37,7 +39,14 @@ export function calculateFunnelSnapshot(events: AnalyticsEvent[], payments: Paym
     landingViews: countDistinct(currentEvents.filter((event) => event.event_name === "landing_view").map((event) => event.visitor_id)),
     createStarted: countDistinct(currentEvents.filter((event) => event.event_name === "create_started").map((event) => event.visitor_id)),
     offerViews: countDistinct(currentEvents.filter((event) => event.event_name === "offer_view").map((event) => event.visitor_id)),
-    purchases: currentPayments.length
+    purchases: currentPayments.length,
+    createSteps: Array.from({ length: 8 }, (_, index) =>
+      countDistinct(
+        currentEvents
+          .filter((event) => event.event_name === "create_step_view" && event.step_number === index + 1)
+          .map((event) => event.visitor_id)
+      )
+    )
   };
 }
 

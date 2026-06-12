@@ -26,7 +26,15 @@ export async function POST(request: Request) {
       landing_views: snapshot.landingViews,
       create_started: snapshot.createStarted,
       offer_views: snapshot.offerViews,
-      purchases: snapshot.purchases
+      purchases: snapshot.purchases,
+      step_1: snapshot.createSteps[0] || 0,
+      step_2: snapshot.createSteps[1] || 0,
+      step_3: snapshot.createSteps[2] || 0,
+      step_4: snapshot.createSteps[3] || 0,
+      step_5: snapshot.createSteps[4] || 0,
+      step_6: snapshot.createSteps[5] || 0,
+      step_7: snapshot.createSteps[6] || 0,
+      step_8: snapshot.createSteps[7] || 0
     });
 
     if (error) {

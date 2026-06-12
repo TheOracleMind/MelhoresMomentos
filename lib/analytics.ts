@@ -1,4 +1,4 @@
-export type AnalyticsEventName = "landing_view" | "create_started" | "offer_view";
+export type AnalyticsEventName = "landing_view" | "create_started" | "offer_view" | "create_step_view";
 
 export function getVisitorId() {
   const key = "melhores-momentos-visitor-id";
@@ -10,11 +10,12 @@ export function getVisitorId() {
   return value;
 }
 
-export function trackAnalyticsEvent(eventName: AnalyticsEventName, lovePageId?: string) {
+export function trackAnalyticsEvent(eventName: AnalyticsEventName, lovePageId?: string, stepNumber?: number) {
   const body = {
     eventName,
     visitorId: getVisitorId(),
-    lovePageId
+    lovePageId,
+    stepNumber
   };
 
   if (navigator.sendBeacon) {

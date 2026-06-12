@@ -3,14 +3,15 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { AnalyticsEventName } from "@/lib/analytics";
 
-const allowedEvents = new Set<AnalyticsEventName>(["landing_view", "create_started", "offer_view"]);
+const allowedEvents = new Set<AnalyticsEventName>(["landing_view", "create_started", "offer_view", "create_step_view"]);
 
 export async function POST(request: Request) {
   try {
-    const { eventName, visitorId, lovePageId } = (await request.json()) as {
+    const { eventName, visitorId, lovePageId, stepNumber } = (await request.json()) as {
       eventName?: AnalyticsEventName;
       visitorId?: string;
       lovePageId?: string;
+      stepNumber?: number;
     };
 
     if (!eventName || !allowedEvents.has(eventName)) {
@@ -26,7 +27,8 @@ export async function POST(request: Request) {
       event_name: eventName,
       visitor_id: safeVisitorId,
       user_id: auth.user?.id || null,
-      love_page_id: lovePageId || null
+      love_page_id: lovePageId || null,
+      step_number: eventName === "create_step_view" && Number.isInteger(stepNumber) ? stepNumber : null
     });
 
     return NextResponse.json({ ok: true });

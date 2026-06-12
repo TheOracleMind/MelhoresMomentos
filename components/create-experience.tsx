@@ -279,6 +279,12 @@ export function CreateExperience({ mode = "create", pageId, isAdmin = false }: {
     }
   }, [isAdmin, isCheckoutStep, mode]);
 
+  useEffect(() => {
+    if (mode === "create") {
+      trackAnalyticsEvent("create_step_view", undefined, step);
+    }
+  }, [mode, step]);
+
   async function uploadFile(file: File, target: "main" | "moment" | "best", momentIndex = 0) {
     setUploading(true);
     setNotice("");

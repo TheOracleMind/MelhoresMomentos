@@ -54,6 +54,14 @@ type FunnelSplitRow = {
   create_started: number;
   offer_views: number;
   purchases: number;
+  step_1: number | null;
+  step_2: number | null;
+  step_3: number | null;
+  step_4: number | null;
+  step_5: number | null;
+  step_6: number | null;
+  step_7: number | null;
+  step_8: number | null;
   created_at: string;
 };
 
@@ -91,7 +99,7 @@ export default async function AdminPage({
     admin.from("payments").select("id, amount, paid_at, stripe_session_id, love_pages(title, slug, user_id, owner_email)").order("paid_at", { ascending: false }),
     admin.from("love_pages").select("*", { count: "exact" }).order("created_at", { ascending: false }),
     listAllUsers(),
-    admin.from("analytics_events").select("event_name, visitor_id, created_at"),
+    admin.from("analytics_events").select("event_name, visitor_id, step_number, created_at"),
     admin.from("funnel_splits").select("*").order("created_at", { ascending: false })
   ]);
 
@@ -106,6 +114,16 @@ export default async function AdminPage({
     { label: "Começaram a criar", value: currentFunnel.createStarted },
     { label: "Chegaram na oferta", value: currentFunnel.offerViews },
     { label: "Pagaram", value: currentFunnel.purchases }
+  ];
+  const createStepFunnel = [
+    { label: "1. Nomes", value: currentFunnel.createSteps[0] || 0 },
+    { label: "2. Datas", value: currentFunnel.createSteps[1] || 0 },
+    { label: "3. Foto", value: currentFunnel.createSteps[2] || 0 },
+    { label: "4. Top fotos", value: currentFunnel.createSteps[3] || 0 },
+    { label: "5. Momentos", value: currentFunnel.createSteps[4] || 0 },
+    { label: "6. Mensagens", value: currentFunnel.createSteps[5] || 0 },
+    { label: "7. Previa", value: currentFunnel.createSteps[6] || 0 },
+    { label: "8. Oferta", value: currentFunnel.createSteps[7] || 0 }
   ];
 
   const userStats = authUsers.map((authUser) => {
@@ -152,6 +170,7 @@ export default async function AdminPage({
                 pageCount={pageCount || pageRows.length}
                 userCount={authUsers.length}
                 funnel={funnel}
+                createStepFunnel={createStepFunnel}
                 splitRows={splitRows}
               />
             ) : null}
@@ -200,6 +219,7 @@ function OverviewTab({
   pageCount,
   userCount,
   funnel,
+  createStepFunnel,
   splitRows
 }: {
   totalSales: number;
@@ -207,9 +227,11 @@ function OverviewTab({
   pageCount: number;
   userCount: number;
   funnel: Array<{ label: string; value: number }>;
+  createStepFunnel: Array<{ label: string; value: number }>;
   splitRows: FunnelSplitRow[];
 }) {
   const base = Math.max(1, funnel[0]?.value || 0);
+  const createStepBase = Math.max(1, createStepFunnel[0]?.value || 0);
   const splitTableRows = createSplitTableRows(splitRows);
 
   return (
@@ -224,8 +246,17 @@ function OverviewTab({
       <section className="overflow-hidden rounded-md border border-ink/10 bg-[#101827] p-6 text-white shadow-soft">
         <h2 className="text-3xl font-black">Funil de vendas</h2>
         <SalesFunnelChart funnel={funnel} base={base} />
-        <FunnelSplitControl rows={splitTableRows} />
       </section>
+
+      <section className="overflow-hidden rounded-md border border-ink/10 bg-[#101827] p-6 text-white shadow-soft">
+        <h2 className="text-3xl font-black">Funil dos passos da criacao</h2>
+        <p className="mt-2 max-w-3xl text-sm font-bold text-white/60">
+          Acompanhe ate qual etapa as pessoas chegam dentro do fluxo de criacao para encontrar pontos de abandono antes da oferta.
+        </p>
+        <SalesFunnelChart funnel={createStepFunnel} base={createStepBase} ariaLabel="Funil dos passos da criacao" />
+      </section>
+
+      <FunnelSplitControl rows={splitTableRows} />
     </div>
   );
 }
@@ -239,25 +270,30 @@ function createSplitTableRows(splits: FunnelSplitRow[]): AdminTableRow[] {
       { label: split.landing_views.toLocaleString("pt-BR"), sortValue: split.landing_views },
       { label: split.create_started.toLocaleString("pt-BR"), sortValue: split.create_started },
       { label: split.offer_views.toLocaleString("pt-BR"), sortValue: split.offer_views },
-      { label: split.purchases.toLocaleString("pt-BR"), sortValue: split.purchases }
+      { label: split.purchases.toLocaleString("pt-BR"), sortValue: split.purchases },
+      ...[split.step_1, split.step_2, split.step_3, split.step_4, split.step_5, split.step_6, split.step_7, split.step_8].map((value) => ({
+        label: (value || 0).toLocaleString("pt-BR"),
+        sortValue: value || 0
+      }))
     ]
   }));
 }
 
-function SalesFunnelChart({ funnel, base }: { funnel: Array<{ label: string; value: number }>; base: number }) {
-  const chartWidth = 1000;
+function SalesFunnelChart({ funnel, base, ariaLabel = "Funil de vendas" }: { funnel: Array<{ label: string; value: number }>; base: number; ariaLabel?: string }) {
+  const compact = funnel.length > 4;
+  const chartWidth = compact ? 1500 : 1000;
   const chartHeight = 280;
   const segmentWidth = chartWidth / funnel.length;
   const maxBand = 128;
   const minBand = 24;
   const centerY = 142;
-  const colors = ["#2563eb", "#7c3aed", "#c026d3", "#f97316"];
+  const colors = ["#2563eb", "#0891b2", "#4f46e5", "#7c3aed", "#c026d3", "#db2777", "#e11d48", "#f97316"];
   const percents = funnel.map((step) => (step.value / base) * 100);
   const bands = percents.map((percent) => Math.max(minBand, maxBand * (percent / 100)));
 
   return (
     <div className="mt-8 overflow-x-auto rounded-md border border-white/10 bg-[#0f172a] p-4">
-      <svg className="min-w-[900px]" viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label="Funil de vendas">
+      <svg className={compact ? "min-w-[1300px]" : "min-w-[900px]"} viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label={ariaLabel}>
         {funnel.map((step, index) => {
           const x0 = index * segmentWidth;
           const x1 = x0 + segmentWidth;
@@ -273,15 +309,15 @@ function SalesFunnelChart({ funnel, base }: { funnel: Array<{ label: string; val
 
           return (
             <g key={step.label}>
-              <text x={x0 + segmentWidth / 2} y="28" textAnchor="middle" className="fill-white text-[22px] font-black">
+              <text x={x0 + segmentWidth / 2} y="28" textAnchor="middle" className="fill-white font-black" style={{ fontSize: compact ? 15 : 22 }}>
                 {step.label}
               </text>
               {index > 0 ? <line x1={x0} x2={x0} y1="46" y2="250" stroke="rgba(226,232,240,0.42)" strokeWidth="3" /> : null}
-              <polygon points={points} fill={colors[index]} opacity="0.96" />
-              <text x={x0 + segmentWidth / 2} y={centerY + 10} textAnchor="middle" className="fill-white text-[32px] font-black">
+              <polygon points={points} fill={colors[index % colors.length]} opacity="0.96" />
+              <text x={x0 + segmentWidth / 2} y={centerY + 10} textAnchor="middle" className="fill-white font-black" style={{ fontSize: compact ? 24 : 32 }}>
                 {formatPercent(percent)}
               </text>
-              <text x={x0 + segmentWidth / 2} y="252" textAnchor="middle" className="fill-white text-[24px] font-black">
+              <text x={x0 + segmentWidth / 2} y="252" textAnchor="middle" className="fill-white font-black" style={{ fontSize: compact ? 18 : 24 }}>
                 {step.value.toLocaleString("pt-BR")}
               </text>
             </g>

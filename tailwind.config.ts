@@ -7,7 +7,7 @@ const config: Config = {
       colors: {
         ink: "#1f1d1b",
         paper: "#fffaf7",
-        rosewood: "#8b3f4d",
+        rosewood: "#e11d48",
         moss: "#586b52",
         petal: "#f6d9dd",
         honey: "#f4c96d"

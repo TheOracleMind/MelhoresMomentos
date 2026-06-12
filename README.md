@@ -9,7 +9,17 @@ SaaS simples para criar uma página personalizada de melhores momentos, com Supa
 - Stripe Checkout sem webhook
 - Vercel
 
-## Configuração local
+## Fluxo Atual
+
+1. A pessoa clica em `Criar Minha Página`.
+2. O wizard abre imediatamente, sem pedir login.
+3. O rascunho fica salvo no navegador e as imagens sobem para o bucket privado por uma API server-side.
+4. No último passo, a pessoa seleciona um plano.
+5. O Stripe coleta o email no checkout.
+6. Depois do pagamento, `/checkout/success` confirma a sessão na Stripe.
+7. A pessoa cria uma senha e a página paga é vinculada à conta.
+
+## Configuração Local
 
 1. Instale dependências:
 
@@ -51,14 +61,14 @@ O projeto confirma o pagamento sem webhook. Depois do pagamento, a Stripe redire
 /checkout/success?session_id={CHECKOUT_SESSION_ID}
 ```
 
-Essa página roda no servidor, consulta a sessão na Stripe, valida `payment_status=paid`, confere os metadados da conta e ativa ou renova a página.
+Essa página roda no servidor, consulta a sessão na Stripe, valida `payment_status=paid`, confere os metadados e ativa ou renova a página.
 
 O checkout usa `price_data` dinâmico, então não é obrigatório criar produtos ou prices no painel da Stripe para testar. Valores:
 
 - R$19,90: página por 24 horas
-- R$29,90: página por 365 dias
+- R$29,90: página por 30 dias
 - R$9,90: renovação por 24 horas
-- R$19,90: renovação por 365 dias
+- R$19,90: renovação por 30 dias
 
 ## Deploy Na Vercel
 
@@ -72,7 +82,8 @@ O checkout usa `price_data` dinâmico, então não é obrigatório criar produto
 
 - A service role do Supabase fica apenas no servidor.
 - O bucket `gift-images` é privado.
-- O banco usa RLS para limitar leitura e escrita ao dono da página.
+- Imagens do rascunho são enviadas por `/api/uploads`, validadas no servidor e gravadas em caminho isolado por token aleatório.
+- O banco usa RLS para limitar leitura e escrita ao dono da página depois que a conta é vinculada.
 - A página pública é renderizada no servidor e recebe URLs assinadas temporárias das imagens.
 - O retorno do Checkout consulta a Stripe no servidor antes de ativar ou renovar páginas.
 - Sem webhook, a ativação depende do retorno para `/checkout/success`. Para um MVP isso simplifica a operação; em escala, um webhook ainda pode ser adicionado como redundância.

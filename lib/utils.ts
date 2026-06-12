@@ -66,6 +66,13 @@ export function mapDbPage(page: DbLovePage, moments: DbMoment[] = []): LovePageD
     paidAt: page.paid_at,
     expiresAt: page.expires_at,
     createdAt: page.created_at,
+    bestPhotos: (page.best_photos || [])
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((photo) => ({
+        id: photo.id,
+        imageUrl: photo.image_url,
+        sortOrder: photo.sort_order
+      })),
     moments: moments
       .sort((a, b) => a.sort_order - b.sort_order)
       .map((moment) => ({
@@ -99,6 +106,7 @@ export const emptyDraft: LovePageDraft = {
   mainPhotoUrl: "",
   theme: "classic",
   status: "draft",
+  bestPhotos: [],
   moments: [
     {
       title: "",

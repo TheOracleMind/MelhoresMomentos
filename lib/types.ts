@@ -10,6 +10,13 @@ export type MomentImage = {
   sortOrder: number;
 };
 
+export type BestPhoto = {
+  id?: string;
+  imageUrl: string;
+  signedUrl?: string;
+  sortOrder: number;
+};
+
 export type Moment = {
   id?: string;
   title: string;
@@ -39,12 +46,14 @@ export type LovePageDraft = {
   paidAt?: string | null;
   expiresAt?: string | null;
   createdAt?: string | null;
+  bestPhotos: BestPhoto[];
   moments: Moment[];
 };
 
 export type DbLovePage = {
   id: string;
-  user_id: string;
+  user_id: string | null;
+  owner_email: string | null;
   slug: string;
   creator_name: string;
   recipient_name: string;
@@ -65,6 +74,7 @@ export type DbLovePage = {
   expires_at: string | null;
   created_at: string;
   updated_at: string;
+  best_photos?: DbBestPhoto[];
 };
 
 export type DbMoment = {
@@ -82,6 +92,14 @@ export type DbMoment = {
 export type DbMomentImage = {
   id: string;
   moment_id: string;
+  image_url: string;
+  sort_order: number;
+  created_at: string;
+};
+
+export type DbBestPhoto = {
+  id: string;
+  love_page_id: string;
   image_url: string;
   sort_order: number;
   created_at: string;

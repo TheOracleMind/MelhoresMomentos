@@ -9,7 +9,7 @@ export default async function PublicGiftPage({ params }: { params: Promise<{ slu
   const supabase = createSupabaseAdminClient();
   const { data: page } = await supabase
     .from("love_pages")
-    .select("*, moments(*, moment_images(*))")
+    .select("*, best_photos(*), moments(*, moment_images(*))")
     .eq("slug", slug)
     .single();
 
@@ -30,7 +30,11 @@ export default async function PublicGiftPage({ params }: { params: Promise<{ slu
 
 async function withSignedImages(page: LovePageDraft) {
   const supabase = createSupabaseAdminClient();
-  const paths = [page.mainPhotoUrl, ...page.moments.flatMap((moment) => moment.images.map((image) => image.imageUrl))].filter(Boolean);
+  const paths = [
+    page.mainPhotoUrl,
+    ...page.bestPhotos.map((photo) => photo.imageUrl),
+    ...page.moments.flatMap((moment) => moment.images.map((image) => image.imageUrl))
+  ].filter(Boolean);
   if (!paths.length) return page;
   const { data } = await supabase.storage.from("gift-images").createSignedUrls(paths, 60 * 60);
   const urls = new Map(data?.map((item) => [item.path, item.signedUrl]) || []);
@@ -38,6 +42,7 @@ async function withSignedImages(page: LovePageDraft) {
   return {
     ...page,
     mainPhotoSignedUrl: urls.get(page.mainPhotoUrl) || undefined,
+    bestPhotos: page.bestPhotos.map((photo) => ({ ...photo, signedUrl: urls.get(photo.imageUrl) || undefined })),
     moments: page.moments.map((moment) => ({
       ...moment,
       images: moment.images.map((image) => ({ ...image, signedUrl: urls.get(image.imageUrl) || undefined }))

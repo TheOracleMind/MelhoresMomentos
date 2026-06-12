@@ -7,17 +7,17 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variants = {
-  primary: "bg-ink text-white hover:bg-rosewood",
-  secondary: "bg-white text-ink border border-ink/10 hover:border-rosewood/40",
+  primary: "bg-rosewood text-white shadow-[0_8px_0_#9f172a] hover:bg-red-500 active:translate-y-1 active:shadow-[0_4px_0_#9f172a]",
+  secondary: "bg-white text-ink border-2 border-ink/10 hover:border-rosewood/45",
   ghost: "bg-transparent text-ink hover:bg-ink/5",
-  danger: "bg-white text-rosewood border border-rosewood/25 hover:bg-petal/35"
+  danger: "bg-white text-rosewood border-2 border-rosewood/25 hover:bg-petal/35"
 };
 
 export function Button({ className, variant = "primary", ...props }: ButtonProps) {
   return (
     <button
       className={cn(
-        "focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-5 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50",
+        "focus-ring inline-flex min-h-14 items-center justify-center gap-2 rounded-md px-7 py-3 text-base font-extrabold transition disabled:cursor-not-allowed disabled:opacity-50",
         variants[variant],
         className
       )}
@@ -35,7 +35,7 @@ export function ButtonLink({ className, variant = "primary", href, ...props }: B
   return (
     <Link
       className={cn(
-        "focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-5 py-2.5 text-sm font-semibold transition",
+        "focus-ring inline-flex min-h-14 items-center justify-center gap-2 rounded-md px-7 py-3 text-base font-extrabold transition",
         variants[variant],
         className
       )}

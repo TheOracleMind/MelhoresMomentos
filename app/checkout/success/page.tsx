@@ -20,14 +20,15 @@ export default async function CheckoutSuccessPage({
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
 
-  if (!auth.user) {
-    redirect(`/login?redirectTo=${encodeURIComponent(`/checkout/success?session_id=${sessionId}`)}`);
-  }
-
-  let lovePageId: string;
+  let redirectTo = "";
   try {
-    const result = await confirmStripeCheckoutSession(sessionId, auth.user.id);
-    lovePageId = result.lovePageId;
+    const result = await confirmStripeCheckoutSession(sessionId, auth.user?.id, auth.user?.email || undefined);
+
+    if (auth.user || !result.needsAccount) {
+      redirectTo = `/dashboard/${result.lovePageId}?checkout=success`;
+    } else {
+      redirectTo = `/checkout/account?session_id=${encodeURIComponent(sessionId)}`;
+    }
   } catch (error) {
     return (
       <CheckoutMessage
@@ -37,7 +38,7 @@ export default async function CheckoutSuccessPage({
     );
   }
 
-  redirect(`/dashboard/${lovePageId}?checkout=success`);
+  redirect(redirectTo);
 }
 
 function CheckoutMessage({ title, message }: { title: string; message: string }) {
@@ -48,7 +49,7 @@ function CheckoutMessage({ title, message }: { title: string; message: string })
         <p className="mt-3 leading-7 text-ink/65">{message}</p>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <ButtonLink href="/dashboard">Ir ao dashboard</ButtonLink>
-          <Link href="/" className="inline-flex min-h-11 items-center justify-center rounded-md px-5 py-2.5 text-sm font-semibold text-ink">
+          <Link href="/" className="inline-flex min-h-14 items-center justify-center rounded-md px-7 py-3 text-base font-extrabold text-ink">
             Voltar ao início
           </Link>
         </div>

@@ -26,7 +26,8 @@ end $$;
 
 create table if not exists public.love_pages (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete set null,
+  owner_email text,
   slug text not null unique,
   creator_name text not null default '',
   recipient_name text not null default '',
@@ -49,6 +50,9 @@ create table if not exists public.love_pages (
   updated_at timestamptz not null default now()
 );
 
+alter table public.love_pages alter column user_id drop not null;
+alter table public.love_pages add column if not exists owner_email text;
+
 create table if not exists public.moments (
   id uuid primary key default gen_random_uuid(),
   love_page_id uuid not null references public.love_pages(id) on delete cascade,
@@ -68,6 +72,14 @@ create table if not exists public.moment_images (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.best_photos (
+  id uuid primary key default gen_random_uuid(),
+  love_page_id uuid not null references public.love_pages(id) on delete cascade,
+  image_url text not null,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.payments (
   id uuid primary key default gen_random_uuid(),
   love_page_id uuid not null references public.love_pages(id) on delete cascade,
@@ -78,10 +90,12 @@ create table if not exists public.payments (
 );
 
 create index if not exists love_pages_user_id_idx on public.love_pages(user_id);
+create index if not exists love_pages_owner_email_idx on public.love_pages(owner_email);
 create index if not exists love_pages_slug_idx on public.love_pages(slug);
 create index if not exists love_pages_expires_at_idx on public.love_pages(expires_at);
 create index if not exists moments_love_page_id_idx on public.moments(love_page_id);
 create index if not exists moment_images_moment_id_idx on public.moment_images(moment_id);
+create index if not exists best_photos_love_page_id_idx on public.best_photos(love_page_id);
 create index if not exists payments_love_page_id_idx on public.payments(love_page_id);
 
 create or replace function public.set_updated_at()
@@ -107,6 +121,7 @@ for each row execute function public.set_updated_at();
 alter table public.love_pages enable row level security;
 alter table public.moments enable row level security;
 alter table public.moment_images enable row level security;
+alter table public.best_photos enable row level security;
 alter table public.payments enable row level security;
 
 drop policy if exists "Users can read own pages" on public.love_pages;
@@ -172,6 +187,25 @@ with check (
     from public.moments
     join public.love_pages on love_pages.id = moments.love_page_id
     where moments.id = moment_images.moment_id
+      and love_pages.user_id = auth.uid()
+  )
+);
+
+drop policy if exists "Users can manage own best photos" on public.best_photos;
+create policy "Users can manage own best photos"
+on public.best_photos for all
+to authenticated
+using (
+  exists (
+    select 1 from public.love_pages
+    where love_pages.id = best_photos.love_page_id
+      and love_pages.user_id = auth.uid()
+  )
+)
+with check (
+  exists (
+    select 1 from public.love_pages
+    where love_pages.id = best_photos.love_page_id
       and love_pages.user_id = auth.uid()
   )
 );

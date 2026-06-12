@@ -20,11 +20,11 @@ export const PLANS: Record<PaymentType, Plan> = {
   },
   initial_365d: {
     id: "initial_365d",
-    label: "365 dias",
+    label: "30 dias",
     price: 2990,
-    durationHours: 365 * 24,
-    checkoutLabel: "Página Melhores Momentos - 365 dias",
-    description: "Perfeita para manter o presente disponível o ano todo."
+    durationHours: 30 * 24,
+    checkoutLabel: "Página Melhores Momentos - 30 dias",
+    description: "Perfeita para manter o presente disponível por um mês."
   },
   renewal_24h: {
     id: "renewal_24h",
@@ -36,11 +36,11 @@ export const PLANS: Record<PaymentType, Plan> = {
   },
   renewal_365d: {
     id: "renewal_365d",
-    label: "Renovar por 365 dias",
+    label: "Renovar por 30 dias",
     price: 1990,
-    durationHours: 365 * 24,
-    checkoutLabel: "Renovação Melhores Momentos - 365 dias",
-    description: "Reative uma página expirada por mais um ano."
+    durationHours: 30 * 24,
+    checkoutLabel: "Renovação Melhores Momentos - 30 dias",
+    description: "Reative uma página expirada por mais 30 dias."
   }
 };
 

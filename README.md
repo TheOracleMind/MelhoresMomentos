@@ -2,6 +2,10 @@
 
 SaaS simples para criar uma página personalizada de melhores momentos, com Supabase Auth, Supabase Storage privado, Stripe Checkout sem webhook, dashboard, painel administrativo, QR Code e página pública em `/p/[slug]`.
 
+## Licença
+
+Este projeto é proprietário. Nenhum uso, cópia, modificação, distribuição ou deploy é permitido sem autorização prévia por escrito. Veja `LICENSE.md`.
+
 ## Stack
 
 - Next.js + TypeScript + Tailwind CSS

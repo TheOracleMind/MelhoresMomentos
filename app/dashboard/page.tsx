@@ -5,6 +5,7 @@ import { DashboardHeader } from "@/components/dashboard-header";
 import { SiteFooter } from "@/components/site-footer";
 import { isUserAdmin } from "@/lib/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { DbLovePage } from "@/lib/types";
 
 export default async function DashboardPage() {
   const supabase = await createSupabaseServerClient();
@@ -17,7 +18,7 @@ export default async function DashboardPage() {
     .from("love_pages")
     .select("id, slug, title, status, plan_type, expires_at, created_at, creator_name, recipient_name")
     .eq("user_id", auth.user.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }) as { data: DbLovePage[] | null };
 
   return (
     <main className="min-h-screen bg-[#fbfbfb]">

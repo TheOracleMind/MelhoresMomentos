@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import type { PointerEvent, ReactNode } from "react";
 import Image from "next/image";
 import { CalendarDays, Heart } from "lucide-react";
 import type { BestPhoto, LovePageDraft, Moment } from "@/lib/types";
@@ -20,6 +20,7 @@ export function GiftPage({ page, preview = false }: { page: LovePageDraft; previ
   const recipient = page.recipientName || "pessoa especial";
   const mainPhoto = page.mainPhotoSignedUrl;
   const bestPhotos = useMemo(() => page.bestPhotos.slice().sort((a, b) => a.sortOrder - b.sortOrder).slice(0, 5), [page.bestPhotos]);
+  const backgroundPhotos = useMemo(() => getBackgroundPhotos(page), [page]);
   const moments = useMemo(() => getStoryMoments(page.moments), [page.moments]);
   const timeTogether = getTimeTogether(page.relationshipStartedAt, now);
   const startDate = page.relationshipStartedAt || page.metAt;
@@ -44,6 +45,7 @@ export function GiftPage({ page, preview = false }: { page: LovePageDraft; previ
         creator={creator}
         recipient={recipient}
         mainPhoto={mainPhoto}
+        backgroundPhotos={backgroundPhotos}
       />
 
       <LetterFacts startDate={startDate} timeTogether={timeTogether} />
@@ -62,17 +64,35 @@ function PremiumHero({
   introMessage,
   creator,
   recipient,
-  mainPhoto
+  mainPhoto,
+  backgroundPhotos
 }: {
   title: string;
   introMessage: string;
   creator: string;
   recipient: string;
   mainPhoto?: string;
+  backgroundPhotos: string[];
 }) {
+  const sectionRef = useRef<HTMLElement | null>(null);
+
+  function handlePointerMove(event: PointerEvent<HTMLElement>) {
+    const rect = sectionRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = (event.clientX - rect.left) / rect.width - 0.5;
+    const y = (event.clientY - rect.top) / rect.height - 0.5;
+    sectionRef.current?.style.setProperty("--hero-mouse-x", String(x));
+    sectionRef.current?.style.setProperty("--hero-mouse-y", String(y));
+  }
+
   return (
-    <section className="letter-hero-section premium-hero-section flex min-h-screen items-center px-5 py-8 sm:px-8">
+    <section
+      ref={sectionRef}
+      className="letter-hero-section premium-hero-section flex min-h-screen items-center px-5 py-8 sm:px-8"
+      onPointerMove={handlePointerMove}
+    >
       <HeartParticles active tone="light" />
+      <HeroPhotoCloud photos={backgroundPhotos} />
       <div className="premium-hero-shell mx-auto flex w-full max-w-3xl flex-col items-center text-center">
         <div className="letter-title-row premium-title-row">
           <h1>{title}</h1>
@@ -91,6 +111,20 @@ function PremiumHero({
         </div>
       </div>
     </section>
+  );
+}
+
+function HeroPhotoCloud({ photos }: { photos: string[] }) {
+  if (!photos.length) return null;
+
+  return (
+    <div className="hero-photo-cloud" aria-hidden="true">
+      {photos.slice(0, 12).map((photo, index) => (
+        <div key={`${photo}-${index}`} className={cn("hero-cloud-photo", `hero-cloud-photo-${(index % 12) + 1}`)}>
+          <Image src={photo} alt="" fill className="object-cover" sizes="180px" />
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -461,6 +495,16 @@ function getStoryMoments(moments: Moment[]) {
       images: []
     }
   ];
+}
+
+function getBackgroundPhotos(page: LovePageDraft) {
+  const mainPhoto = page.mainPhotoSignedUrl;
+  const photos = [
+    ...page.bestPhotos.map((photo) => photo.signedUrl),
+    ...page.moments.flatMap((moment) => moment.images.map((image) => image.signedUrl))
+  ].filter((photo): photo is string => Boolean(photo && photo !== mainPhoto));
+
+  return Array.from(new Set(photos));
 }
 
 function formatGiftDate(value: string | null | undefined) {

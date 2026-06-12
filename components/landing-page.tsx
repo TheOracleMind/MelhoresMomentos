@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { MouseEvent, ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, Gift, Heart, ImagePlus, Play, QrCode, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Gift, Heart, ImagePlus, QrCode, Sparkles } from "lucide-react";
 import { ButtonLink } from "@/components/button";
 import { SiteFooter } from "@/components/site-footer";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -127,26 +127,23 @@ export function LandingPage() {
             </div>
           </div>
 
-          <div className="relative z-10 mx-auto w-full max-w-[360px]">
+          <div className="relative z-10 mx-auto w-full max-w-[360px] md:max-w-[460px]">
             <div className="rounded-[2rem] border-[10px] border-ink bg-ink p-2 shadow-[0_28px_80px_rgba(17,14,12,0.24)]">
               <div className="relative aspect-[9/16] overflow-hidden rounded-[1.35rem] bg-[#151116]">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_35%_18%,rgba(225,29,72,0.55),transparent_30%),linear-gradient(180deg,#27141a,#09080b)]" />
-                <div className="absolute inset-x-5 top-5 flex items-center justify-between text-white/70">
-                  <span className="h-2 w-16 rounded-full bg-white/20" />
-                  <span className="text-xs font-black uppercase">YouTube</span>
-                </div>
-                <div className="absolute inset-0 grid place-items-center">
-                  <div className="grid h-24 w-24 place-items-center rounded-full bg-white text-rosewood shadow-[0_18px_50px_rgba(0,0,0,0.35)]">
-                    <Play className="h-10 w-10 fill-current" />
-                  </div>
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/70 to-transparent p-6 pt-24 text-white">
-                  <p className="text-sm font-black uppercase tracking-[0.16em] text-red-200">vídeo por dentro</p>
-                  <h2 className="mt-2 text-3xl font-black leading-tight">Veja como o presente fica na prática</h2>
-                  <p className="mt-3 text-sm font-bold leading-6 text-white/70">Espaço reservado para o vídeo vertical de demonstração.</p>
+                <iframe
+                  className="h-full w-full border-0 bg-white"
+                  src="/demo"
+                  title="Exemplo interativo de presente digital"
+                  loading="lazy"
+                />
+                <div className="pointer-events-none absolute inset-x-4 bottom-4 rounded-full bg-black/70 px-4 py-2 text-center text-xs font-black uppercase tracking-[0.12em] text-white shadow-soft backdrop-blur">
+                  Role dentro do celular
                 </div>
               </div>
             </div>
+            <p className="mt-4 text-center text-sm font-bold leading-6 text-ink/55">
+              Veja um exemplo de como vai ficar!
+            </p>
           </div>
         </div>
       </section>

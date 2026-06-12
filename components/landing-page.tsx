@@ -114,7 +114,7 @@ export function LandingPage() {
               presente digital em poucos minutos
             </p>
             <h1 className="animate-fade-up max-w-4xl text-5xl font-black leading-[0.95] [animation-delay:80ms] sm:text-7xl lg:text-8xl">
-              Declare seu <span className="text-rosewood">amor</span> pela sua namorada.
+              Declare seu <span className="text-rosewood">amor</span> para o seu amor.
             </h1>
             <p className="animate-fade-up mt-6 max-w-2xl text-xl font-semibold leading-9 text-ink/72 [animation-delay:160ms]">
               Em menos de cinco minutos, você vai criar um presente digital na forma de site, com imagens, animações e até mesmo uma linha do tempo com uma retrospectiva animada para o seu amor.

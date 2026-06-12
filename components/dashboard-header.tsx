@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export function DashboardHeader({ active }: { active: "dashboard" | "account" }) {
+export function DashboardHeader({ active, isAdmin = false }: { active: "dashboard" | "account" | "admin"; isAdmin?: boolean }) {
   return (
     <header className="border-b border-ink/10 bg-white px-5 py-4 sm:px-8">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
@@ -13,6 +13,7 @@ export function DashboardHeader({ active }: { active: "dashboard" | "account" })
         <nav className="flex items-center gap-2">
           <HeaderLink href="/dashboard/conta" active={active === "account"}>Conta</HeaderLink>
           <HeaderLink href="/dashboard" active={active === "dashboard"}>Dashboard</HeaderLink>
+          {isAdmin ? <HeaderLink href="/admin" active={active === "admin"}>Admin</HeaderLink> : null}
         </nav>
       </div>
     </header>

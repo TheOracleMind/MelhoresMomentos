@@ -1,19 +1,12 @@
 import { NextResponse } from "next/server";
 import { PLANS } from "@/lib/plans";
+import { createPageFromDraft, type PersistedDraftPage } from "@/lib/page-drafts";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
 import type { LovePageDraft, PaymentType } from "@/lib/types";
-import { createPageSlug } from "@/lib/utils";
 
-type CheckoutPage = {
-  id: string;
-  slug: string;
-  title: string | null;
-  status: string;
-  expires_at: string | null;
-  stripe_customer_id: string | null;
-};
+type CheckoutPage = PersistedDraftPage;
 
 export async function POST(request: Request) {
   try {
@@ -36,7 +29,12 @@ export async function POST(request: Request) {
     let page: CheckoutPage | null = null;
 
     if (!pageId && isInitial && draft) {
-      page = await createPendingPageFromDraft(draft, auth.user?.id || null);
+      page = await createPageFromDraft({
+        draft,
+        userId: auth.user?.id || null,
+        ownerEmail: auth.user?.email || null,
+        status: "pending_payment"
+      });
       pageId = page.id;
     }
 
@@ -109,83 +107,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: session.url });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erro ao criar checkout.";
-    return NextResponse.json(
-      { error: message },
-      { status: message.includes("supabase/update.sql") ? 400 : 500 }
-    );
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-}
-
-async function createPendingPageFromDraft(draft: LovePageDraft, userId: string | null) {
-  const admin = createSupabaseAdminClient();
-  const slug = draft.slug || createPageSlug(draft.creatorName, draft.recipientName);
-
-  const { data: page, error } = await admin
-    .from("love_pages")
-    .insert({
-      user_id: userId,
-      slug,
-      creator_name: draft.creatorName || "",
-      recipient_name: draft.recipientName || "",
-      relationship_type: draft.relationshipType || "outro",
-      met_at: draft.metAt || null,
-      relationship_started_at: draft.relationshipStartedAt || null,
-      short_message: draft.shortMessage || null,
-      title: draft.title || "Nossos melhores momentos",
-      intro_message: draft.introMessage || "",
-      final_message: draft.finalMessage || "",
-      main_photo_url: draft.mainPhotoUrl || null,
-      theme: draft.theme || "classic",
-      status: "pending_payment"
-    })
-    .select("id, slug, title, status, expires_at, stripe_customer_id")
-    .single();
-
-  if (error || !page) throw new Error(error?.message || "Não foi possível preparar a página.");
-
-  const bestPhotos = (draft.bestPhotos || []).slice(0, 5).map((photo, index) => ({
-    love_page_id: page.id,
-    image_url: photo.imageUrl,
-    sort_order: index
-  }));
-
-  if (bestPhotos.length) {
-    const { error: bestPhotosError } = await admin.from("best_photos").insert(bestPhotos);
-    if (bestPhotosError) {
-      if (bestPhotosError.code === "42P01" || bestPhotosError.message.toLowerCase().includes("best_photos")) {
-        throw new Error("A tabela best_photos ainda não existe no Supabase. Execute supabase/update.sql e tente novamente.");
-      }
-      throw new Error(bestPhotosError.message);
-    }
-  }
-
-  for (const [index, moment] of draft.moments.slice(0, 8).entries()) {
-    if (!moment.title && !moment.description && moment.images.length === 0) continue;
-    const { data: insertedMoment, error: momentError } = await admin
-      .from("moments")
-      .insert({
-        love_page_id: page.id,
-        title: moment.title || `Momento ${index + 1}`,
-        description: moment.description || "",
-        moment_date: moment.momentDate || null,
-        sort_order: index
-      })
-      .select("id")
-      .single();
-
-    if (momentError || !insertedMoment) throw new Error(momentError?.message || "Não foi possível salvar os momentos.");
-
-    const images = moment.images.slice(0, 3).map((image, imageIndex) => ({
-      moment_id: insertedMoment.id,
-      image_url: image.imageUrl,
-      sort_order: imageIndex
-    }));
-
-    if (images.length) {
-      const { error: imagesError } = await admin.from("moment_images").insert(images);
-      if (imagesError) throw new Error(imagesError.message);
-    }
-  }
-
-  return page;
 }

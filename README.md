@@ -1,6 +1,6 @@
 # Melhores Momentos
 
-SaaS simples para criar uma página personalizada de melhores momentos, com Supabase Auth, Supabase Storage privado, Stripe Checkout sem webhook, dashboard, QR Code e página pública em `/p/[slug]`.
+SaaS simples para criar uma página personalizada de melhores momentos, com Supabase Auth, Supabase Storage privado, Stripe Checkout sem webhook, dashboard, painel administrativo, QR Code e página pública em `/p/[slug]`.
 
 ## Stack
 
@@ -39,6 +39,8 @@ STRIPE_SECRET_KEY=...
 
 3. No Supabase, rode o SQL de `supabase/schema.sql` no SQL Editor. Ele cria tabelas, índices, RLS e o bucket privado `gift-images`.
 
+Se o banco já existir e você não quiser apagar tudo, rode `supabase/admin_update.sql` para adicionar apenas as tabelas do admin e analytics.
+
 4. Configure Auth no Supabase:
 
 - Habilite Email/Password.
@@ -52,6 +54,13 @@ npm run dev
 ```
 
 6. Abra `http://localhost:3000`.
+
+## Primeiro Acesso Admin
+
+1. Com o schema aplicado, abra `/admin`.
+2. Se ainda não existir administrador, a página vai pedir email e senha para criar a única conta admin.
+3. Depois disso, `/admin` passa a exigir login. Nenhum outro administrador poderá ser criado pela interface.
+4. A conta admin também usa o dashboard normal e pode criar páginas em `/create` sem passar pelo checkout.
 
 ## Stripe Local
 
@@ -84,6 +93,8 @@ O checkout usa `price_data` dinâmico, então não é obrigatório criar produto
 - O bucket `gift-images` é privado.
 - Imagens do rascunho são enviadas por `/api/uploads`, validadas no servidor e gravadas em caminho isolado por token aleatório.
 - O banco usa RLS para limitar leitura e escrita ao dono da página depois que a conta é vinculada.
+- A tabela `admin_users` é singleton, tem RLS habilitado e não possui policies públicas; apenas rotas server-side com service role consultam ou gravam dados administrativos.
+- O painel admin nunca lê dados globais pelo cliente Supabase; tudo é agregado no servidor após validar a sessão admin.
 - A página pública é renderizada no servidor e recebe URLs assinadas temporárias das imagens.
 - O retorno do Checkout consulta a Stripe no servidor antes de ativar ou renovar páginas.
 - Sem webhook, a ativação depende do retorno para `/checkout/success`. Para um MVP isso simplifica a operação; em escala, um webhook ainda pode ser adicionado como redundância.
@@ -94,3 +105,5 @@ O checkout usa `price_data` dinâmico, então não é obrigatório criar produto
 - `components/`: landing, fluxo, dashboard e página pública.
 - `lib/`: Supabase, Stripe, planos, tipos e utilitários.
 - `supabase/schema.sql`: comando SQL para criar banco, policies e storage.
+- `supabase/admin_update.sql`: atualização incremental para adicionar admin e analytics em um banco existente.
+- `supabase/erase.sql`: apaga tabelas, policies e bucket para recriar tudo do zero.

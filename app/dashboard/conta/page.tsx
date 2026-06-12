@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { AccountActions } from "@/components/account-actions";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { SiteFooter } from "@/components/site-footer";
+import { isUserAdmin } from "@/lib/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatPrice, PLANS } from "@/lib/plans";
 import type { PaymentType } from "@/lib/types";
@@ -31,6 +32,7 @@ export default async function AccountPage() {
   const { data: auth } = await supabase.auth.getUser();
 
   if (!auth.user) redirect("/login?redirectTo=/dashboard/conta");
+  const admin = await isUserAdmin(auth.user.id);
 
   const { data: payments } = await supabase
     .from("payments")
@@ -39,7 +41,7 @@ export default async function AccountPage() {
 
   return (
     <main className="min-h-screen bg-[#fbfbfb]">
-      <DashboardHeader active="account" />
+      <DashboardHeader active="account" isAdmin={admin} />
       <section className="px-5 py-8 sm:px-8">
         <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[0.8fr_1.2fr]">
           <section className="rounded-md border border-ink/10 bg-white p-6 shadow-soft">

@@ -3,6 +3,7 @@ import { ButtonLink } from "@/components/button";
 import { DashboardClient } from "@/components/dashboard-client";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { SiteFooter } from "@/components/site-footer";
+import { isUserAdmin } from "@/lib/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
@@ -10,6 +11,7 @@ export default async function DashboardPage() {
   const { data: auth } = await supabase.auth.getUser();
 
   if (!auth.user) redirect("/login?redirectTo=/dashboard");
+  const admin = await isUserAdmin(auth.user.id);
 
   const { data: pages } = await supabase
     .from("love_pages")
@@ -18,7 +20,7 @@ export default async function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-[#fbfbfb]">
-      <DashboardHeader active="dashboard" />
+      <DashboardHeader active="dashboard" isAdmin={admin} />
       <section className="px-5 py-8 sm:px-8">
         <div className="mx-auto max-w-6xl">
           <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Gift, Heart, ImagePlus, Play, QrCode, Sparkles } from "lucide-react";
 import { ButtonLink } from "@/components/button";
 import { SiteFooter } from "@/components/site-footer";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { formatPrice, initialPlans } from "@/lib/plans";
 
 const steps = [
@@ -77,8 +78,19 @@ const faqs = [
 ];
 
 export function LandingPage() {
+  useEffect(() => {
+    trackAnalyticsEvent("landing_view");
+  }, []);
+
+  function handleClick(event: MouseEvent<HTMLElement>) {
+    const link = (event.target as HTMLElement).closest("a");
+    if (link?.getAttribute("href") === "/create") {
+      trackAnalyticsEvent("create_started");
+    }
+  }
+
   return (
-    <main className="bg-[#fbfbfb] text-ink">
+    <main className="bg-[#fbfbfb] text-ink" onClick={handleClick}>
       <div className="sticky top-0 z-50 bg-rosewood px-5 py-3 text-center text-sm font-black uppercase tracking-[0.14em] text-white">
         Desconto Especial de Lançamento
       </div>

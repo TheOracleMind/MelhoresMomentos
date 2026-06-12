@@ -89,6 +89,23 @@ create table if not exists public.payments (
   paid_at timestamptz not null default now()
 );
 
+create table if not exists public.admin_users (
+  singleton_key boolean primary key default true,
+  user_id uuid not null unique references auth.users(id) on delete cascade,
+  email text not null unique,
+  created_at timestamptz not null default now(),
+  constraint admin_users_singleton check (singleton_key = true)
+);
+
+create table if not exists public.analytics_events (
+  id uuid primary key default gen_random_uuid(),
+  event_name text not null check (event_name in ('landing_view', 'create_started', 'offer_view')),
+  visitor_id text,
+  user_id uuid references auth.users(id) on delete set null,
+  love_page_id uuid references public.love_pages(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists love_pages_user_id_idx on public.love_pages(user_id);
 create index if not exists love_pages_owner_email_idx on public.love_pages(owner_email);
 create index if not exists love_pages_slug_idx on public.love_pages(slug);
@@ -97,6 +114,9 @@ create index if not exists moments_love_page_id_idx on public.moments(love_page_
 create index if not exists moment_images_moment_id_idx on public.moment_images(moment_id);
 create index if not exists best_photos_love_page_id_idx on public.best_photos(love_page_id);
 create index if not exists payments_love_page_id_idx on public.payments(love_page_id);
+create index if not exists analytics_events_event_name_idx on public.analytics_events(event_name);
+create index if not exists analytics_events_visitor_id_idx on public.analytics_events(visitor_id);
+create index if not exists analytics_events_created_at_idx on public.analytics_events(created_at);
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -123,6 +143,8 @@ alter table public.moments enable row level security;
 alter table public.moment_images enable row level security;
 alter table public.best_photos enable row level security;
 alter table public.payments enable row level security;
+alter table public.admin_users enable row level security;
+alter table public.analytics_events enable row level security;
 
 drop policy if exists "Users can read own pages" on public.love_pages;
 create policy "Users can read own pages"

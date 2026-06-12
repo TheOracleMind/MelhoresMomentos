@@ -25,6 +25,7 @@ import type { User } from "@supabase/supabase-js";
 import { AuthForm } from "@/components/auth-form";
 import { Button } from "@/components/button";
 import { GiftPage } from "@/components/gift-page";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { compressImage } from "@/lib/image";
 import { formatPrice, initialPlans } from "@/lib/plans";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -80,7 +81,7 @@ function getDraftToken() {
   return token;
 }
 
-export function CreateExperience({ mode = "create", pageId }: { mode?: "create" | "edit"; pageId?: string }) {
+export function CreateExperience({ mode = "create", pageId, isAdmin = false }: { mode?: "create" | "edit"; pageId?: string; isAdmin?: boolean }) {
   const router = useRouter();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const totalSteps = mode === "edit" ? 6 : 8;
@@ -95,6 +96,7 @@ export function CreateExperience({ mode = "create", pageId }: { mode?: "create" 
   const [expandedDescriptions, setExpandedDescriptions] = useState<number[]>([]);
   const [expandedDates, setExpandedDates] = useState<number[]>([]);
   const initialLoadDone = useRef(false);
+  const offerTracked = useRef(false);
   const isCheckoutStep = mode === "create" && step === totalSteps;
   const creatorName = draft.creatorName.trim() || "você";
   const recipientName = draft.recipientName.trim() || "essa pessoa especial";
@@ -270,6 +272,13 @@ export function CreateExperience({ mode = "create", pageId }: { mode?: "create" 
     return () => window.clearTimeout(timer);
   }, [draft, saveDraft]);
 
+  useEffect(() => {
+    if (mode === "create" && isCheckoutStep && !isAdmin && !offerTracked.current) {
+      offerTracked.current = true;
+      trackAnalyticsEvent("offer_view");
+    }
+  }, [isAdmin, isCheckoutStep, mode]);
+
   async function uploadFile(file: File, target: "main" | "moment" | "best", momentIndex = 0) {
     setUploading(true);
     setNotice("");
@@ -348,6 +357,22 @@ export function CreateExperience({ mode = "create", pageId }: { mode?: "create" 
       return;
     }
     window.location.href = payload.url;
+  }
+
+  async function publishAdminPage() {
+    await saveDraft(draft);
+    const response = await fetch("/api/admin/publish-page", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ draft: { ...draft, theme: "classic" } })
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      setNotice(payload.error || "Não foi possível publicar a página.");
+      return;
+    }
+    window.localStorage.removeItem(localDraftKey);
+    router.push("/dashboard");
   }
 
   function updateMoment(index: number, patch: Partial<Moment>) {
@@ -746,6 +771,8 @@ export function CreateExperience({ mode = "create", pageId }: { mode?: "create" 
             }}>
               Salvar
             </Button>
+          ) : isAdmin ? (
+            <Button onClick={publishAdminPage}>Publicar página grátis</Button>
           ) : (
             <Button onClick={startCheckout}>Criar minha página</Button>
           )}

@@ -16,10 +16,11 @@ export function CreateAccountForm({ sessionId }: { sessionId: string }) {
     setLoading(true);
     setMessage("");
 
+    const draftToken = window.localStorage.getItem("melhores-momentos-draft-token") || undefined;
     const response = await fetch("/api/checkout/create-account", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId, password })
+      body: JSON.stringify({ sessionId, password, draftToken })
     });
     const payload = await response.json();
 
@@ -42,6 +43,7 @@ export function CreateAccountForm({ sessionId }: { sessionId: string }) {
     }
 
     window.localStorage.removeItem("melhores-momentos-draft");
+    window.localStorage.removeItem("melhores-momentos-draft-token");
     window.location.href = "/dashboard?checkout=success";
   }
 
@@ -65,7 +67,7 @@ export function CreateAccountForm({ sessionId }: { sessionId: string }) {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           autoComplete="new-password"
-          minLength={6}
+          minLength={8}
         />
       </div>
 
@@ -81,7 +83,7 @@ export function CreateAccountForm({ sessionId }: { sessionId: string }) {
           Entrar e assumir página
         </Button>
       ) : (
-        <Button className="mt-6 w-full" disabled={loading || password.length < 6} onClick={submit}>
+        <Button className="mt-6 w-full" disabled={loading || password.length < 8} onClick={submit}>
           {loading ? "Criando..." : "Acessar minha página"}
         </Button>
       )}

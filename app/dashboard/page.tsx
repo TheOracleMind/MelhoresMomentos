@@ -15,7 +15,8 @@ export default async function DashboardPage() {
 
   const { data: pages } = await supabase
     .from("love_pages")
-    .select("*")
+    .select("id, slug, title, status, plan_type, expires_at, created_at, creator_name, recipient_name")
+    .eq("user_id", auth.user.id)
     .order("created_at", { ascending: false });
 
   return (

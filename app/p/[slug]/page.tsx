@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { GiftPage } from "@/components/gift-page";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -19,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     .eq("slug", slug)
     .single();
 
-  if (!page) {
+  if (!page || page.status !== "active" || isExpired(page.expires_at)) {
     return {
       title: "Melhores Momentos"
     };
@@ -74,13 +73,11 @@ export default async function PublicGiftPage({ params }: { params: Promise<{ slu
     .eq("slug", slug)
     .single();
 
-  if (!page) notFound();
-
-  if (page.status !== "active" || isExpired(page.expires_at)) {
-    if (page.status === "active" && isExpired(page.expires_at)) {
+  if (!page || page.status !== "active" || isExpired(page.expires_at)) {
+    if (page?.status === "active" && isExpired(page.expires_at)) {
       await supabase.from("love_pages").update({ status: "expired" }).eq("id", page.id);
     }
-    return <ExpiredPage />;
+    return <UnavailablePage />;
   }
 
   const mapped = mapDbPage(page, page.moments || []);
@@ -126,7 +123,7 @@ async function createSignedImageUrl(path: string, expiresIn: number) {
   return data?.signedUrl;
 }
 
-function ExpiredPage() {
+function UnavailablePage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-5 py-12 text-center">
       <div className="max-w-md rounded-md border border-ink/10 bg-white p-8 shadow-soft">

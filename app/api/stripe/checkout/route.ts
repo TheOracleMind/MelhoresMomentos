@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PLANS } from "@/lib/plans";
 import { createPageFromDraft, type PersistedDraftPage } from "@/lib/page-drafts";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
@@ -10,6 +11,12 @@ type CheckoutPage = PersistedDraftPage;
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const allowed = await checkRateLimit(`checkout:${ip}`, 5, 60);
+    if (!allowed) {
+      return NextResponse.json({ error: "Muitas tentativas. Aguarde um momento e tente novamente." }, { status: 429 });
+    }
+
     const { lovePageId, paymentType, draft } = (await request.json()) as {
       lovePageId?: string;
       paymentType?: PaymentType;

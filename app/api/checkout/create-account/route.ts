@@ -1,17 +1,25 @@
 import { NextResponse } from "next/server";
 import { confirmStripeCheckoutSession } from "@/lib/payments";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe";
 
 export async function POST(request: Request) {
   try {
-    const { sessionId, password } = (await request.json()) as {
+    const ip = getClientIp(request);
+    const allowed = await checkRateLimit(`create-account:${ip}`, 5, 60);
+    if (!allowed) {
+      return NextResponse.json({ error: "Muitas tentativas. Aguarde um momento e tente novamente." }, { status: 429 });
+    }
+
+    const { sessionId, password, draftToken } = (await request.json()) as {
       sessionId?: string;
       password?: string;
+      draftToken?: string;
     };
 
-    if (!sessionId || !password || password.length < 6) {
-      return NextResponse.json({ error: "Informe uma senha com pelo menos 6 caracteres." }, { status: 400 });
+    if (!sessionId || !password || password.length < 8) {
+      return NextResponse.json({ error: "Informe uma senha com pelo menos 8 caracteres." }, { status: 400 });
     }
 
     const stripe = getStripe();
@@ -47,6 +55,15 @@ export async function POST(request: Request) {
     }
 
     const result = await confirmStripeCheckoutSession(sessionId, createdUser.user.id, email);
+
+    // Mark the draft token's images as claimed so the expiry job preserves them
+    if (draftToken && /^[a-zA-Z0-9_-]{20,80}$/.test(draftToken)) {
+      await admin
+        .from("draft_uploads")
+        .update({ claimed_at: new Date().toISOString() })
+        .eq("draft_token", draftToken)
+        .is("claimed_at", null);
+    }
 
     return NextResponse.json({
       email,

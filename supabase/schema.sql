@@ -118,6 +118,30 @@ create index if not exists analytics_events_event_name_idx on public.analytics_e
 create index if not exists analytics_events_visitor_id_idx on public.analytics_events(visitor_id);
 create index if not exists analytics_events_created_at_idx on public.analytics_events(created_at);
 
+create table if not exists public.draft_uploads (
+  id uuid primary key default gen_random_uuid(),
+  draft_token text not null,
+  storage_path text not null,
+  created_at timestamptz not null default now(),
+  claimed_at timestamptz
+);
+
+create index if not exists draft_uploads_token_created_at_idx
+  on public.draft_uploads(draft_token, created_at desc);
+
+create index if not exists draft_uploads_unclaimed_created_at_idx
+  on public.draft_uploads(created_at)
+  where claimed_at is null;
+
+create table if not exists public.rate_limit_attempts (
+  id uuid primary key default gen_random_uuid(),
+  key text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists rate_limit_attempts_key_created_at_idx
+  on public.rate_limit_attempts(key, created_at desc);
+
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql

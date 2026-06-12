@@ -27,10 +27,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Use uma imagem com até 8 MB." }, { status: 400 });
     }
 
+    const supabase = createSupabaseAdminClient();
+
+    // Rate limit: 5 uploads per draft token per 60 seconds
+    const windowStart = new Date(Date.now() - 60 * 1000).toISOString();
+    const { count } = await supabase
+      .from("draft_uploads")
+      .select("id", { count: "exact", head: true })
+      .eq("draft_token", draftToken)
+      .gte("created_at", windowStart);
+
+    if (count !== null && count >= 5) {
+      return NextResponse.json(
+        { error: "Muitas imagens enviadas. Aguarde um momento e tente novamente." },
+        { status: 429 }
+      );
+    }
+
     const extension = file.type === "image/png" ? "png" : file.type === "image/jpeg" ? "jpg" : "webp";
     const safeTarget = target === "main" || target === "best" ? target : "moment";
     const path = `drafts/${draftToken}/${safeTarget}/${crypto.randomUUID()}.${extension}`;
-    const supabase = createSupabaseAdminClient();
 
     const { error } = await supabase.storage.from("gift-images").upload(path, file, {
       cacheControl: "31536000",
@@ -41,6 +57,9 @@ export async function POST(request: Request) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // Track the upload for expiry and rate limiting
+    await supabase.from("draft_uploads").insert({ draft_token: draftToken, storage_path: path });
 
     const { data } = await supabase.storage.from("gift-images").createSignedUrl(path, 60 * 60);
 

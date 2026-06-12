@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const allowed = await checkRateLimit(`admin-setup:${ip}`, 3, 3600);
+    if (!allowed) {
+      return NextResponse.json({ error: "Muitas tentativas. Aguarde um momento e tente novamente." }, { status: 429 });
+    }
+
     const { email, password } = (await request.json()) as { email?: string; password?: string };
     const normalizedEmail = email?.trim().toLowerCase();
 

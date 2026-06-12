@@ -142,7 +142,13 @@ function LetterFacts({
         <FactScreen>
           <p className="fact-kicker">O começo</p>
           <h2 className="fact-line">
-            No dia <strong>{formatGiftDate(startDate)}</strong>, tudo começou.
+            <TypewriterText
+              segments={[
+                { text: "No dia " },
+                { text: formatGiftDate(startDate), strong: true },
+                { text: ", tudo começou." }
+              ]}
+            />
           </h2>
         </FactScreen>
 
@@ -163,7 +169,7 @@ function LetterFacts({
         <FactScreen>
           <HeartParticles active />
           <h2 className="fact-line">
-            E eu quero que esse número fique maior a cada dia.
+            <TypewriterText segments={[{ text: "E eu quero que esse número fique maior a cada dia." }]} />
           </h2>
         </FactScreen>
       </section>
@@ -207,7 +213,7 @@ function CalendarCard({ days }: { days: number }) {
         <span />
       </div>
       <div className="calendar-head">dias juntos</div>
-      <div className="calendar-number">{days.toLocaleString("pt-BR")}</div>
+      <div className="calendar-number"><CountUpNumber value={days} /></div>
       <div className="calendar-grid">
         {Array.from({ length: 21 }).map((_, index) => (
           <span key={index} className={index % 4 === 0 ? "calendar-heart" : ""} />
@@ -273,8 +279,81 @@ function CountUpNumber({ value }: { value: number }) {
   return <span ref={ref}>{display.toLocaleString("pt-BR")}</span>;
 }
 
+type TypewriterSegment = {
+  text: string;
+  strong?: boolean;
+};
+
+function TypewriterText({ segments }: { segments: TypewriterSegment[] }) {
+  const ref = useRef<HTMLSpanElement | null>(null);
+  const [visibleChars, setVisibleChars] = useState(0);
+  const fullText = segments.map((segment) => segment.text).join("");
+  const totalChars = fullText.length;
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || !totalChars) return;
+    let interval: number | undefined;
+    let started = false;
+    const charsPerTick = Math.max(1, Math.ceil(totalChars / 270));
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting || started) return;
+        started = true;
+        interval = window.setInterval(() => {
+          setVisibleChars((current) => {
+            const next = Math.min(totalChars, current + charsPerTick);
+            if (next >= totalChars && interval) window.clearInterval(interval);
+            return next;
+          });
+        }, 84);
+      },
+      { threshold: 0.45 }
+    );
+
+    observer.observe(node);
+    return () => {
+      observer.disconnect();
+      if (interval) window.clearInterval(interval);
+    };
+  }, [totalChars]);
+
+  let remaining = visibleChars;
+
+  return (
+    <span ref={ref} className="typewriter-text" aria-label={fullText}>
+      <span aria-hidden="true">
+        {segments.map((segment, index) => {
+          const visibleText = segment.text.slice(0, Math.max(0, remaining));
+          remaining -= visibleText.length;
+          if (!visibleText) return null;
+          return segment.strong ? <strong key={index}>{visibleText}</strong> : <span key={index}>{visibleText}</span>;
+        })}
+        <span className={cn("typewriter-cursor", visibleChars >= totalChars && "typewriter-cursor-done")} />
+      </span>
+    </span>
+  );
+}
+
 function BestPhotosReveal({ photos }: { photos: BestPhoto[] }) {
   const [revealed, setRevealed] = useState<number[]>([]);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const node = sectionRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setVisible(true);
+      },
+      { threshold: 0.18, rootMargin: "0px 0px -10% 0px" }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   if (!photos.length) return null;
 
@@ -283,12 +362,13 @@ function BestPhotosReveal({ photos }: { photos: BestPhoto[] }) {
   }
 
   return (
-    <section className="best-photos-section">
+    <section ref={sectionRef} className={cn("best-photos-section", visible && "best-photos-section-visible")}>
       <HeartParticles active tone="light" />
       <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
         <div className="best-photos-heading">
-          <p>clique pra revelar</p>
-          <h2>você consegue acertar as nossas cinco melhores fotos?</h2>
+          <p>desafio</p>
+          <h2>Você consegue acertar as nossas <span>cinco melhores fotos</span>?</h2>
+          <h3>Toque em cada uma para revelar.</h3>
         </div>
 
         <div className="best-photos-stage">
@@ -343,9 +423,25 @@ function TimelineMoment({ moment, index, recipient }: { moment: Moment; index: n
   const images = moment.images.filter((image) => image.signedUrl).slice(0, 3);
   const title = moment.title || "Uma lembrança especial";
   const hasDate = Boolean(moment.momentDate);
+  const itemRef = useRef<HTMLElement | null>(null);
+  const [visible, setVisible] = useState(false);
   const [frontImageIndex, setFrontImageIndex] = useState(0);
   const dragStartRef = useRef<number | null>(null);
   const draggedRef = useRef(false);
+
+  useEffect(() => {
+    const node = itemRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setVisible(true);
+      },
+      { threshold: 0.24, rootMargin: "0px 0px -12% 0px" }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (frontImageIndex >= images.length) setFrontImageIndex(0);
@@ -367,7 +463,7 @@ function TimelineMoment({ moment, index, recipient }: { moment: Moment; index: n
   }
 
   return (
-    <article className={cn("timeline-item", index % 2 ? "timeline-item-right" : "timeline-item-left")}>
+    <article ref={itemRef} className={cn("timeline-item", index % 2 ? "timeline-item-right" : "timeline-item-left", visible && "timeline-item-visible")}>
       <div className="timeline-dot" />
       <div className="timeline-content">
         {hasDate ? (
@@ -378,7 +474,7 @@ function TimelineMoment({ moment, index, recipient }: { moment: Moment; index: n
         ) : null}
         <h3 className="text-4xl font-black leading-tight">{title}</h3>
         <p className="mt-4 text-lg font-semibold leading-8 text-black/68">
-          {moment.description || `Uma memória que ${recipient} vai reconhecer no instante em que abrir essa parte da carta.`}
+          <TypewriterText segments={[{ text: moment.description || `Uma memória que ${recipient} vai reconhecer no instante em que abrir essa parte da carta.` }]} />
         </p>
       </div>
 

@@ -1,8 +1,69 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { GiftPage } from "@/components/gift-page";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import type { LovePageDraft } from "@/lib/types";
+import type { DbLovePage, DbMoment, LovePageDraft } from "@/lib/types";
 import { isExpired, mapDbPage } from "@/lib/utils";
+
+type PublicPageRow = DbLovePage & {
+  best_photos?: Array<{ image_url: string; sort_order: number }>;
+  moments?: Array<DbMoment>;
+};
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = createSupabaseAdminClient();
+  const { data: page } = await supabase
+    .from("love_pages")
+    .select("*, best_photos(image_url, sort_order), moments(*, moment_images(*))")
+    .eq("slug", slug)
+    .single();
+
+  if (!page) {
+    return {
+      title: "Melhores Momentos"
+    };
+  }
+
+  const mapped = mapDbPage(page as PublicPageRow, page.moments || []);
+  const title = mapped.title || `Uma surpresa de ${mapped.creatorName || "alguém especial"} para ${mapped.recipientName || "você"}`;
+  const description =
+    mapped.introMessage ||
+    mapped.shortMessage ||
+    `Uma página especial com fotos, memórias e uma linha do tempo criada para ${mapped.recipientName || "uma pessoa especial"}.`;
+  const coverPath = getCoverImagePath(mapped);
+  const coverUrl = coverPath ? await createSignedImageUrl(coverPath, 60 * 60 * 24 * 7) : undefined;
+  const url = `${(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "")}/p/${mapped.slug}`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: url
+    },
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: "Melhores Momentos",
+      type: "website",
+      images: coverUrl
+        ? [
+            {
+              url: coverUrl,
+              alt: title
+            }
+          ]
+        : undefined
+    },
+    twitter: {
+      card: coverUrl ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: coverUrl ? [coverUrl] : undefined
+    }
+  };
+}
 
 export default async function PublicGiftPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -48,6 +109,21 @@ async function withSignedImages(page: LovePageDraft) {
       images: moment.images.map((image) => ({ ...image, signedUrl: urls.get(image.imageUrl) || undefined }))
     }))
   };
+}
+
+function getCoverImagePath(page: LovePageDraft) {
+  return (
+    page.mainPhotoUrl ||
+    page.bestPhotos[0]?.imageUrl ||
+    page.moments.flatMap((moment) => moment.images.map((image) => image.imageUrl))[0] ||
+    ""
+  );
+}
+
+async function createSignedImageUrl(path: string, expiresIn: number) {
+  const supabase = createSupabaseAdminClient();
+  const { data } = await supabase.storage.from("gift-images").createSignedUrl(path, expiresIn);
+  return data?.signedUrl;
 }
 
 function ExpiredPage() {

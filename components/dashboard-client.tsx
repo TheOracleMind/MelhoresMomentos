@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Copy, ExternalLink, Pencil, QrCode, RotateCcw } from "lucide-react";
+import { Copy, Download, ExternalLink, Pencil, RotateCcw } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { Button, ButtonLink } from "@/components/button";
 import { formatPrice, renewalPlans } from "@/lib/plans";
@@ -37,56 +37,56 @@ export function DashboardClient({ pages }: { pages: DbLovePage[] }) {
 
         return (
           <article key={page.id} className="rounded-md border border-ink/10 bg-white p-5 shadow-soft">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-              <div>
+            <div className="grid gap-6 lg:grid-cols-[1fr_280px] lg:items-start">
+              <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-2xl font-bold">{page.title || "Nossos melhores momentos"}</h2>
                   <span className="rounded-full bg-petal px-3 py-1 text-xs font-bold text-rosewood">
                     {expired ? "Expirada" : page.status === "active" ? "Ativa" : page.status === "pending_payment" ? "Pagamento pendente" : "Rascunho"}
                   </span>
                 </div>
-                <p className="mt-2 text-sm text-ink/60">Criada em {formatDate(page.created_at)} · Expira em {formatDate(page.expires_at)}</p>
+
+                <p className="mt-2 text-sm text-ink/60">
+                  Criada em {formatDate(page.created_at)} · Expira em {formatDate(page.expires_at)}
+                </p>
+
+                <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <Info label="De" value={page.creator_name || "Não informado"} />
+                  <Info label="Para" value={page.recipient_name || "Não informado"} />
+                </dl>
+
                 <Link className="mt-3 inline-flex break-all text-sm font-semibold text-rosewood" href={`/p/${page.slug}`} target="_blank">
                   {publicUrl}
                 </Link>
-              </div>
 
-              <div className="flex shrink-0 gap-2">
-                <Button variant="secondary" onClick={() => copyLink(page.slug)}>
-                  <Copy className="h-4 w-4" />
-                  Copiar
-                </Button>
-                <ButtonLink href={`/dashboard/${page.id}`} variant="secondary">
-                  <QrCode className="h-4 w-4" />
-                  Detalhes
-                </ButtonLink>
-              </div>
-            </div>
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              <ButtonLink href={`/p/${page.slug}`} variant="secondary" target="_blank">
-                <ExternalLink className="h-4 w-4" />
-                Visualizar
-              </ButtonLink>
-              <ButtonLink href={`/dashboard/${page.id}/editar`} variant="secondary">
-                <Pencil className="h-4 w-4" />
-                Editar
-              </ButtonLink>
-            </div>
-
-            {expired ? (
-              <div className="mt-5 rounded-md border border-rosewood/20 bg-petal/40 p-4">
-                <p className="font-bold text-rosewood">Renovar página</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {renewalPlans.map((plan) => (
-                    <Button key={plan.id} variant="secondary" disabled={busy === `${page.id}-${plan.id}`} onClick={() => renew(page.id, plan.id)}>
-                      <RotateCcw className="h-4 w-4" />
-                      {plan.label} · {formatPrice(plan.price)}
-                    </Button>
-                  ))}
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <ButtonLink href={`/p/${page.slug}`} variant="secondary" target="_blank">
+                    <ExternalLink className="h-4 w-4" />
+                    Visualizar
+                  </ButtonLink>
+                  <ButtonLink href={`/dashboard/${page.id}/editar`} variant="secondary">
+                    <Pencil className="h-4 w-4" />
+                    Editar
+                  </ButtonLink>
                 </div>
+
+                {expired ? (
+                  <div className="mt-5 rounded-md border border-rosewood/20 bg-petal/40 p-4">
+                    <p className="font-bold text-rosewood">Renovar página</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {renewalPlans.map((plan) => (
+                        <Button key={plan.id} variant="secondary" disabled={busy === `${page.id}-${plan.id}`} onClick={() => renew(page.id, plan.id)}>
+                          <RotateCcw className="h-4 w-4" />
+                          {plan.label} · {formatPrice(plan.price)}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
-            ) : null}
+
+              <PageQrCode slug={page.slug} title={page.title || "Melhores Momentos"} onCopy={() => copyLink(page.slug)} />
+            </div>
           </article>
         );
       })}
@@ -94,7 +94,16 @@ export function DashboardClient({ pages }: { pages: DbLovePage[] }) {
   );
 }
 
-export function PageQrCode({ slug, title }: { slug: string; title: string }) {
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md bg-[#fbfbfb] p-3">
+      <dt className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</dt>
+      <dd className="mt-1 font-bold">{value}</dd>
+    </div>
+  );
+}
+
+export function PageQrCode({ slug, title, onCopy }: { slug: string; title: string; onCopy?: () => void }) {
   const publicUrl = getPublicPageUrl(slug);
   const elementId = `qr-${slug}`;
 
@@ -112,17 +121,20 @@ export function PageQrCode({ slug, title }: { slug: string; title: string }) {
   }
 
   return (
-    <div className="rounded-md border border-ink/10 bg-white p-5 shadow-soft">
+    <div className="rounded-md border border-ink/10 bg-[#fbfbfb] p-5">
       <p className="font-bold">QR Code</p>
-      <div className="mt-4 inline-block rounded-md bg-white p-3">
+      <div className="mt-4 flex justify-center rounded-md bg-white p-3">
         <QRCodeSVG id={elementId} value={publicUrl} title={title} size={180} />
       </div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Button variant="secondary" onClick={() => navigator.clipboard.writeText(publicUrl)}>
+      <div className="mt-4 grid gap-2">
+        <Button variant="secondary" onClick={onCopy || (() => navigator.clipboard.writeText(publicUrl))}>
           <Copy className="h-4 w-4" />
           Copiar link
         </Button>
-        <Button onClick={downloadQrCode}>Baixar QR Code</Button>
+        <Button onClick={downloadQrCode}>
+          <Download className="h-4 w-4" />
+          Baixar QR Code
+        </Button>
       </div>
     </div>
   );

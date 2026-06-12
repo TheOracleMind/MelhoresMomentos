@@ -25,7 +25,7 @@ export default async function CheckoutSuccessPage({
     const result = await confirmStripeCheckoutSession(sessionId, auth.user?.id, auth.user?.email || undefined);
 
     if (auth.user || !result.needsAccount) {
-      redirectTo = `/dashboard/${result.lovePageId}?checkout=success`;
+      redirectTo = "/dashboard?checkout=success";
     } else {
       redirectTo = `/checkout/account?session_id=${encodeURIComponent(sessionId)}`;
     }

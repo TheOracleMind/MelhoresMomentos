@@ -42,7 +42,7 @@ export function CreateAccountForm({ sessionId }: { sessionId: string }) {
     }
 
     window.localStorage.removeItem("melhores-momentos-draft");
-    window.location.href = `/dashboard/${payload.lovePageId}?checkout=success`;
+    window.location.href = "/dashboard?checkout=success";
   }
 
   return (

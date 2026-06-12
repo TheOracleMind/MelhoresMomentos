@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Gift, Heart, ImagePlus, Play, QrCode, Sparkles } from "lucide-react";
 import { ButtonLink } from "@/components/button";
+import { SiteFooter } from "@/components/site-footer";
 import { formatPrice, initialPlans } from "@/lib/plans";
 
 const steps = [
@@ -78,7 +79,7 @@ const faqs = [
 export function LandingPage() {
   return (
     <main className="bg-[#fbfbfb] text-ink">
-      <div className="bg-rosewood px-5 py-3 text-center text-sm font-black uppercase tracking-[0.14em] text-white">
+      <div className="sticky top-0 z-50 bg-rosewood px-5 py-3 text-center text-sm font-black uppercase tracking-[0.14em] text-white">
         Desconto Especial de Lançamento
       </div>
 
@@ -292,15 +293,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <footer className="border-t border-ink/10 bg-white px-5 py-8 sm:px-8">
-        <div className="mx-auto flex max-w-6xl flex-col gap-3 text-sm font-semibold text-ink/60 sm:flex-row sm:items-center sm:justify-between">
-          <p>Melhores Momentos</p>
-          <div className="flex gap-5">
-            <a href="mailto:guilherme@unidaystudio.com.br">Contato</a>
-            <a href="/termos">Termos de uso e privacidade</a>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </main>
   );
 }

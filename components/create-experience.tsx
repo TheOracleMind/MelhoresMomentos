@@ -742,7 +742,7 @@ export function CreateExperience({ mode = "create", pageId }: { mode?: "create" 
           ) : mode === "edit" ? (
             <Button onClick={async () => {
               await saveDraft(draft);
-              router.push(pageId ? `/dashboard/${pageId}` : "/dashboard");
+              router.push("/dashboard");
             }}>
               Salvar
             </Button>

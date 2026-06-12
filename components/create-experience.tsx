@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Children, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowDown,
@@ -72,6 +72,62 @@ function textAreaClass() {
   return "focus-ring mt-2 min-h-32 w-full rounded-md border-2 border-ink/10 bg-white px-4 py-3 text-lg font-semibold outline-none";
 }
 
+function hasText(value?: string | null) {
+  return Boolean(value?.trim());
+}
+
+function hasCompleteMoment(moment: Moment) {
+  return hasText(moment.title) && moment.images.length > 0;
+}
+
+function getStepValidation(step: number, draft: LovePageDraft, mode: "create" | "edit") {
+  if (mode === "edit" && step > 6) return { canContinue: true, message: "" };
+
+  if (step === 1) {
+    return {
+      canContinue: hasText(draft.creatorName) && hasText(draft.recipientName),
+      message: "Preencha o seu nome e o nome da pessoa presenteada para continuar."
+    };
+  }
+
+  if (step === 2) {
+    return {
+      canContinue: Boolean(draft.metAt || draft.relationshipStartedAt) && hasText(draft.shortMessage),
+      message: "Coloque pelo menos uma data e uma frase curtinha para abrir o presente."
+    };
+  }
+
+  if (step === 3) {
+    return {
+      canContinue: Boolean(draft.mainPhotoUrl),
+      message: "Escolha a foto principal antes de continuar."
+    };
+  }
+
+  if (step === 4) {
+    return {
+      canContinue: draft.bestPhotos.length > 0,
+      message: "Adicione pelo menos uma foto favorita do casal."
+    };
+  }
+
+  if (step === 5) {
+    return {
+      canContinue: draft.moments.some(hasCompleteMoment),
+      message: "Crie pelo menos um momento com titulo e uma foto."
+    };
+  }
+
+  if (step === 6) {
+    return {
+      canContinue: hasText(draft.title) && hasText(draft.introMessage) && hasText(draft.finalMessage),
+      message: "Preencha o titulo, a mensagem de abertura e a mensagem final."
+    };
+  }
+
+  return { canContinue: true, message: "" };
+}
+
 function getDraftToken() {
   let token = window.localStorage.getItem(localTokenKey);
   if (!token) {
@@ -93,14 +149,17 @@ export function CreateExperience({ mode = "create", pageId, isAdmin = false }: {
   const [uploading, setUploading] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [notice, setNotice] = useState("");
+  const [showValidationMessage, setShowValidationMessage] = useState(false);
   const [expandedDescriptions, setExpandedDescriptions] = useState<number[]>([]);
   const [expandedDates, setExpandedDates] = useState<number[]>([]);
   const initialLoadDone = useRef(false);
   const offerTracked = useRef(false);
+  const previousStep = useRef(step);
   const isCheckoutStep = mode === "create" && step === totalSteps;
   const creatorName = draft.creatorName.trim() || "você";
   const recipientName = draft.recipientName.trim() || "essa pessoa especial";
   const coupleName = draft.creatorName.trim() && draft.recipientName.trim() ? `${draft.creatorName.trim()} e ${draft.recipientName.trim()}` : "vocês";
+  const stepValidation = getStepValidation(step, draft, mode);
 
   const patchDraft = useCallback((patch: Partial<LovePageDraft>) => {
     setDraft((current) => ({ ...current, ...patch }));
@@ -285,6 +344,21 @@ export function CreateExperience({ mode = "create", pageId, isAdmin = false }: {
     }
   }, [mode, step]);
 
+  useEffect(() => {
+    if (previousStep.current === step) return;
+    previousStep.current = step;
+    setShowValidationMessage(false);
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }, [step]);
+
+  useEffect(() => {
+    if (stepValidation.canContinue) {
+      setShowValidationMessage(false);
+    }
+  }, [stepValidation.canContinue]);
+
   async function uploadFile(file: File, target: "main" | "moment" | "best", momentIndex = 0) {
     setUploading(true);
     setNotice("");
@@ -408,6 +482,25 @@ export function CreateExperience({ mode = "create", pageId, isAdmin = false }: {
     if (target < 0 || target >= next.length) return;
     [next[index], next[target]] = [next[target], next[index]];
     updateBestPhotos(next);
+  }
+
+  function continueToNextStep() {
+    if (!stepValidation.canContinue) {
+      setShowValidationMessage(true);
+      return;
+    }
+
+    setStep((current) => Math.min(totalSteps, current + 1));
+  }
+
+  async function saveEditPage() {
+    if (!stepValidation.canContinue) {
+      setShowValidationMessage(true);
+      return;
+    }
+
+    await saveDraft(draft);
+    router.push("/dashboard");
   }
 
   if (loading) {
@@ -557,7 +650,7 @@ export function CreateExperience({ mode = "create", pageId, isAdmin = false }: {
           <StepShell
             eyebrow="Memórias que marcaram"
             title={`Quais momentos de ${coupleName} merecem entrar nesse presente?`}
-            subtitle="Você pode adicionar, remover e mudar a ordem. Data e descrição são opcionais, então coloque só o que deixar a lembrança mais bonita."
+            subtitle="Você pode escolher até oito momentos, adicionar fotos e mudar a ordem. Data e descrição são opcionais, então coloque só o que deixar a lembrança mais bonita."
           >
             <ConversationBubble>
               Pense em viagens, mensagens importantes, um dia comum que virou especial, uma conquista, uma risada, uma surpresa.
@@ -758,6 +851,11 @@ export function CreateExperience({ mode = "create", pageId, isAdmin = false }: {
       ) : null}
 
       <footer className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/10 bg-white px-5 py-4 shadow-[0_-8px_28px_rgba(0,0,0,0.06)]">
+        {!isCheckoutStep && showValidationMessage ? (
+          <p className="mx-auto mb-3 max-w-3xl rounded-md bg-red-50 px-4 py-2 text-sm font-extrabold text-rosewood">
+            {stepValidation.message}
+          </p>
+        ) : null}
         <div className={cn("mx-auto grid max-w-3xl gap-3", isCheckoutStep ? "grid-cols-1" : "grid-cols-2")}>
           {!isCheckoutStep ? (
           <Button variant="secondary" disabled={step === 1} onClick={() => setStep((current) => Math.max(1, current - 1))}>
@@ -766,15 +864,20 @@ export function CreateExperience({ mode = "create", pageId, isAdmin = false }: {
           </Button>
           ) : null}
           {step < totalSteps ? (
-            <Button onClick={() => setStep((current) => Math.min(totalSteps, current + 1))}>
+            <Button
+              aria-disabled={!stepValidation.canContinue}
+              className={!stepValidation.canContinue ? "cursor-not-allowed opacity-50" : undefined}
+              onClick={continueToNextStep}
+            >
               Continuar
               <ArrowRight className="h-5 w-5" />
             </Button>
           ) : mode === "edit" ? (
-            <Button onClick={async () => {
-              await saveDraft(draft);
-              router.push("/dashboard");
-            }}>
+            <Button
+              aria-disabled={!stepValidation.canContinue}
+              className={!stepValidation.canContinue ? "cursor-not-allowed opacity-50" : undefined}
+              onClick={saveEditPage}
+            >
               Salvar
             </Button>
           ) : isAdmin ? (
@@ -831,16 +934,87 @@ function StepProgress({ step, totalSteps }: { step: number; totalSteps: number }
 }
 
 function StepShell({ eyebrow, title, subtitle, children }: { eyebrow: string; title: string; subtitle: string; children: React.ReactNode }) {
+  const childItems = Children.toArray(children);
+  const [titleDone, setTitleDone] = useState(false);
+  const [subtitleDone, setSubtitleDone] = useState(false);
+  const [visibleChildren, setVisibleChildren] = useState(0);
+
+  useEffect(() => {
+    setTitleDone(false);
+    setSubtitleDone(false);
+    setVisibleChildren(0);
+  }, [title, subtitle]);
+
+  useEffect(() => {
+    if (!subtitleDone || visibleChildren >= childItems.length) return;
+    const timer = window.setTimeout(() => {
+      setVisibleChildren((current) => Math.min(childItems.length, current + 1));
+    }, visibleChildren === 0 ? 180 : 135);
+
+    return () => window.clearTimeout(timer);
+  }, [childItems.length, subtitleDone, visibleChildren]);
+
   return (
     <div className="animate-rise rounded-md border border-ink/10 bg-white p-5 shadow-soft sm:p-7">
       <p className="animate-fade-up inline-flex items-center gap-2 rounded-full bg-red-50 px-4 py-2 text-sm font-black uppercase text-rosewood">
         <Gift className="h-4 w-4" />
         {eyebrow}
       </p>
-      <h1 className="animate-fade-up mt-5 text-4xl font-black leading-tight [animation-delay:90ms]">{title}</h1>
-      <p className="animate-fade-up mt-3 text-lg font-semibold leading-8 text-ink/65 [animation-delay:160ms]">{subtitle}</p>
-      <div className="animate-fade-up mt-7 [animation-delay:230ms]">{children}</div>
+      <h1 className="mt-5 min-h-[2.45em] text-4xl font-black leading-tight">
+        <TypewriterText text={title} speed={18} onDone={() => setTitleDone(true)} />
+      </h1>
+      <p className={cn("mt-3 min-h-16 text-lg font-semibold leading-8 text-ink/65 transition duration-300", titleDone ? "opacity-100" : "opacity-0")}>
+        {titleDone ? <TypewriterText text={subtitle} speed={11} onDone={() => setSubtitleDone(true)} /> : null}
+      </p>
+      <div className="mt-7">
+        {childItems.map((child, index) => (
+          <div
+            key={index}
+            className={cn(
+              "transition duration-500 ease-out",
+              index < visibleChildren ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0"
+            )}
+          >
+            {child}
+          </div>
+        ))}
+      </div>
     </div>
+  );
+}
+
+function TypewriterText({ text, speed, onDone }: { text: string; speed: number; onDone?: () => void }) {
+  const [visibleChars, setVisibleChars] = useState(0);
+  const doneRef = useRef(false);
+
+  useEffect(() => {
+    setVisibleChars(0);
+    doneRef.current = false;
+  }, [text]);
+
+  useEffect(() => {
+    if (visibleChars >= text.length) {
+      if (!doneRef.current) {
+        doneRef.current = true;
+        onDone?.();
+      }
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setVisibleChars((current) => Math.min(text.length, current + 1));
+    }, speed);
+
+    return () => window.clearTimeout(timer);
+  }, [onDone, speed, text.length, visibleChars]);
+
+  const done = visibleChars >= text.length;
+
+  return (
+    <>
+      <span className="typewriter-text">{text.slice(0, visibleChars)}</span>
+      <span className={cn("typewriter-cursor", done && "typewriter-cursor-done")} aria-hidden="true" />
+    </>
   );
 }
 

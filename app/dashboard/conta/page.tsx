@@ -4,6 +4,7 @@ import { DashboardHeader } from "@/components/dashboard-header";
 import { SiteFooter } from "@/components/site-footer";
 import { isUserAdmin } from "@/lib/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { supportEmail } from "@/lib/site-config";
 import { formatPrice, PLANS } from "@/lib/plans";
 import type { PaymentType } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
@@ -55,8 +56,8 @@ export default async function AccountPage() {
 
             <div className="mt-6 rounded-md bg-[#fbfbfb] p-4">
               <p className="text-xs font-black uppercase tracking-wide text-ink/45">Suporte</p>
-              <a className="mt-1 inline-flex break-all text-lg font-black text-rosewood" href="mailto:guilherme@unidaystudio.com.br">
-                guilherme@unidaystudio.com.br
+              <a className="mt-1 inline-flex break-all text-lg font-black text-rosewood" href={`mailto:${supportEmail}`}>
+                {supportEmail}
               </a>
             </div>
 

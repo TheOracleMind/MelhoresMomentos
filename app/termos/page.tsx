@@ -1,3 +1,5 @@
+import { supportEmail } from "@/lib/site-config";
+
 const sections = [
   {
     title: "1. Sobre o Serviço",
@@ -70,7 +72,7 @@ const sections = [
   {
     title: "10. Contato",
     paragraphs: [
-      "Em caso de dúvidas relacionadas a estes Termos de Uso ou à privacidade dos dados, entre em contato pelo email guilherme@unidaystudio.com.br."
+      `Em caso de dúvidas relacionadas a estes Termos de Uso ou à privacidade dos dados, entre em contato pelo email ${supportEmail}.`
     ]
   }
 ];

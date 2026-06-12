@@ -19,5 +19,18 @@ create index if not exists analytics_events_event_name_idx on public.analytics_e
 create index if not exists analytics_events_visitor_id_idx on public.analytics_events(visitor_id);
 create index if not exists analytics_events_created_at_idx on public.analytics_events(created_at);
 
+create table if not exists public.funnel_splits (
+  id uuid primary key default gen_random_uuid(),
+  reason text not null default '',
+  landing_views int not null default 0,
+  create_started int not null default 0,
+  offer_views int not null default 0,
+  purchases int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists funnel_splits_created_at_idx on public.funnel_splits(created_at desc);
+
 alter table public.admin_users enable row level security;
 alter table public.analytics_events enable row level security;
+alter table public.funnel_splits enable row level security;

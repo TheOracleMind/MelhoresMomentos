@@ -2,11 +2,13 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { AdminSetupForm } from "@/components/admin-setup-form";
-import { AdminSortableTable } from "@/components/admin-sortable-table";
+import { AdminSortableTable, type AdminTableRow } from "@/components/admin-sortable-table";
 import { ButtonLink } from "@/components/button";
 import { DashboardHeader } from "@/components/dashboard-header";
+import { FunnelSplitControl } from "@/components/funnel-split-control";
 import { SiteFooter } from "@/components/site-footer";
 import { getAdminStatus, getCurrentUser, isUserAdmin } from "@/lib/admin";
+import { calculateFunnelSnapshot } from "@/lib/admin-funnel";
 import { formatPrice } from "@/lib/plans";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { formatDate, getPublicPageUrl, isExpired } from "@/lib/utils";
@@ -45,6 +47,16 @@ type AdminPageRow = {
   status: string;
 };
 
+type FunnelSplitRow = {
+  id: string;
+  reason: string;
+  landing_views: number;
+  create_started: number;
+  offer_views: number;
+  purchases: number;
+  created_at: string;
+};
+
 function normalizeTab(value?: string): AdminTab {
   return value === "users" || value === "pages" || value === "transactions" ? value : "overview";
 }
@@ -75,25 +87,25 @@ export default async function AdminPage({
   const params = await searchParams;
   const activeTab = normalizeTab(params.tab);
   const admin = createSupabaseAdminClient();
-  const [{ data: payments }, { data: pages, count: pageCount }, authUsers, { data: events }] = await Promise.all([
+  const [{ data: payments }, { data: pages, count: pageCount }, authUsers, { data: events }, { data: splits }] = await Promise.all([
     admin.from("payments").select("id, amount, paid_at, stripe_session_id, love_pages(title, slug, user_id, owner_email)").order("paid_at", { ascending: false }),
     admin.from("love_pages").select("*", { count: "exact" }).order("created_at", { ascending: false }),
     listAllUsers(),
-    admin.from("analytics_events").select("event_name, visitor_id")
+    admin.from("analytics_events").select("event_name, visitor_id, created_at"),
+    admin.from("funnel_splits").select("*").order("created_at", { ascending: false })
   ]);
 
   const paymentRows = (payments || []) as AdminPayment[];
   const pageRows = (pages || []) as AdminPageRow[];
+  const splitRows = (splits || []) as FunnelSplitRow[];
   const totalSales = paymentRows.reduce((sum, payment) => sum + payment.amount, 0);
-  const uniqueVisitors = countDistinct(events?.filter((event) => event.event_name === "landing_view").map((event) => event.visitor_id));
-  const createStarted = countDistinct(events?.filter((event) => event.event_name === "create_started").map((event) => event.visitor_id));
-  const offerViews = countDistinct(events?.filter((event) => event.event_name === "offer_view").map((event) => event.visitor_id));
-  const paidCount = paymentRows.length;
+  const latestSplitAt = splitRows[0]?.created_at || null;
+  const currentFunnel = calculateFunnelSnapshot(events || [], paymentRows, latestSplitAt);
   const funnel = [
-    { label: "Visitaram a página", value: uniqueVisitors },
-    { label: "Começaram a criar", value: createStarted },
-    { label: "Chegaram na oferta", value: offerViews },
-    { label: "Pagaram", value: paidCount }
+    { label: "Visitaram a página", value: currentFunnel.landingViews },
+    { label: "Começaram a criar", value: currentFunnel.createStarted },
+    { label: "Chegaram na oferta", value: currentFunnel.offerViews },
+    { label: "Pagaram", value: currentFunnel.purchases }
   ];
 
   const userStats = authUsers.map((authUser) => {
@@ -140,6 +152,7 @@ export default async function AdminPage({
                 pageCount={pageCount || pageRows.length}
                 userCount={authUsers.length}
                 funnel={funnel}
+                splitRows={splitRows}
               />
             ) : null}
             {activeTab === "users" ? <UsersTab users={userStats} /> : null}
@@ -170,10 +183,6 @@ async function listAllUsers() {
   return users;
 }
 
-function countDistinct(values: Array<string | null> | undefined) {
-  return new Set((values || []).filter(Boolean)).size;
-}
-
 function TabLink({ href, active, children }: { href: string; active: boolean; children: ReactNode }) {
   return (
     <Link
@@ -190,15 +199,18 @@ function OverviewTab({
   salesCount,
   pageCount,
   userCount,
-  funnel
+  funnel,
+  splitRows
 }: {
   totalSales: number;
   salesCount: number;
   pageCount: number;
   userCount: number;
   funnel: Array<{ label: string; value: number }>;
+  splitRows: FunnelSplitRow[];
 }) {
   const base = Math.max(1, funnel[0]?.value || 0);
+  const splitTableRows = createSplitTableRows(splitRows);
 
   return (
     <div className="grid gap-6">
@@ -212,9 +224,24 @@ function OverviewTab({
       <section className="overflow-hidden rounded-md border border-ink/10 bg-[#101827] p-6 text-white shadow-soft">
         <h2 className="text-3xl font-black">Funil de vendas</h2>
         <SalesFunnelChart funnel={funnel} base={base} />
+        <FunnelSplitControl rows={splitTableRows} />
       </section>
     </div>
   );
+}
+
+function createSplitTableRows(splits: FunnelSplitRow[]): AdminTableRow[] {
+  return splits.map((split) => ({
+    id: split.id,
+    cells: [
+      { label: formatDate(split.created_at), sortValue: new Date(split.created_at).getTime() },
+      { label: split.reason || "Split sem nome", sortValue: split.reason || "" },
+      { label: split.landing_views.toLocaleString("pt-BR"), sortValue: split.landing_views },
+      { label: split.create_started.toLocaleString("pt-BR"), sortValue: split.create_started },
+      { label: split.offer_views.toLocaleString("pt-BR"), sortValue: split.offer_views },
+      { label: split.purchases.toLocaleString("pt-BR"), sortValue: split.purchases }
+    ]
+  }));
 }
 
 function SalesFunnelChart({ funnel, base }: { funnel: Array<{ label: string; value: number }>; base: number }) {

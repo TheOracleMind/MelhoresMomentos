@@ -21,6 +21,7 @@ drop policy if exists "Users can read own pages" on public.love_pages;
 drop trigger if exists set_moments_updated_at on public.moments;
 drop trigger if exists set_love_pages_updated_at on public.love_pages;
 
+drop table if exists public.funnel_splits cascade;
 drop table if exists public.analytics_events cascade;
 drop table if exists public.admin_users cascade;
 drop table if exists public.payments cascade;

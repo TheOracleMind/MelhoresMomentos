@@ -42,7 +42,7 @@ export function AdminSortableTable({ headers, rows }: { headers: string[]; rows:
   }
 
   return (
-    <div className="overflow-hidden rounded-md border border-ink/10 bg-white shadow-soft">
+    <div className="overflow-hidden rounded-md border border-ink/10 bg-white text-ink shadow-soft">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] text-left">
           <thead className="bg-[#fbfbfb]">

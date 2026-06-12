@@ -93,139 +93,138 @@ select {
   position: relative;
   overflow: hidden;
   background:
+    radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.08), transparent 28rem),
+    radial-gradient(circle at 18% 78%, rgba(225, 29, 72, 0.14), transparent 22rem),
     linear-gradient(
       180deg,
-      rgba(18, 16, 22, 0) 0%,
-      rgba(18, 16, 22, 0) 48%,
-      rgba(21, 17, 22, 0.84) 60%,
-      #33272d 76%,
-      #8d7378 91%,
+      #0b090d 0%,
+      #121016 54%,
+      #1d1519 76%,
       #efe5df 100%
     ),
-    linear-gradient(135deg, rgba(225, 29, 72, 0.18), transparent 38%),
-    linear-gradient(225deg, rgba(255, 255, 255, 0.08), transparent 42%),
     #121016;
 }
 
+.letter-hero-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.18;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.7) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 70% 20%, rgba(255, 255, 255, 0.45) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 54% 80%, rgba(255, 255, 255, 0.35) 0 1px, transparent 1.5px);
+  background-size: 90px 90px, 130px 130px, 170px 170px;
+}
+
+.premium-hero-shell {
+  position: relative;
+  z-index: 5;
+  padding-top: clamp(1rem, 4vh, 2.5rem);
+  padding-bottom: clamp(1rem, 4vh, 2.5rem);
+}
+
 .letter-title-row {
-  margin-bottom: clamp(1.25rem, 4vw, 2.5rem);
-  width: min(94vw, 980px);
+  margin-bottom: clamp(1.4rem, 4vw, 2.2rem);
+  width: min(92vw, 720px);
   text-align: center;
 }
 
 .letter-title-row h1 {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin: 0 auto;
+  max-width: 680px;
   color: #fff;
-  font-size: clamp(2rem, 5vw, 5.5rem);
+  font-size: clamp(2.35rem, 9vw, 5.2rem);
   font-weight: 950;
   letter-spacing: 0;
-  line-height: 1;
-  text-shadow: 0 14px 44px rgba(0, 0, 0, 0.34);
-  animation: fade-up 680ms ease both;
+  line-height: 0.96;
+  text-wrap: balance;
+  text-shadow: 0 12px 36px rgba(0, 0, 0, 0.24);
+  animation: premium-title-in 700ms ease both;
 }
 
 .letter-title-row p {
-  margin: 0.8rem auto 0;
-  max-width: 860px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: rgba(255, 255, 255, 0.68);
-  font-size: clamp(1rem, 1.8vw, 1.2rem);
-  font-weight: 800;
-  animation: fade-up 680ms ease 120ms both;
+  margin: 1rem auto 0;
+  max-width: 560px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: clamp(0.98rem, 2.8vw, 1.18rem);
+  font-weight: 700;
+  line-height: 1.55;
+  text-wrap: balance;
+  animation: premium-title-in 700ms ease 120ms both;
 }
 
-.css-envelope {
+.premium-hero-photo {
   position: relative;
-  width: min(70vw, 980px);
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  border-radius: 26px;
-  background: #fff;
-  box-shadow: 0 34px 90px rgba(64, 43, 31, 0.2);
-  animation: envelope-enter 720ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  isolation: isolate;
+  width: min(82vw, 500px);
+  padding: clamp(0.7rem, 2.8vw, 1rem) clamp(0.7rem, 2.8vw, 1rem) clamp(2.2rem, 7vw, 3.1rem);
+  transform: rotate(-1.6deg);
+  box-shadow:
+    0 34px 90px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+  animation: premium-photo-in 850ms cubic-bezier(0.2, 0.8, 0.2, 1) 180ms both, premium-photo-float 7s ease-in-out 1.2s infinite;
 }
 
-.hero-envelope {
-  width: min(70vw, 1040px);
+.premium-hero-photo::after {
+  top: -12px;
+  width: 112px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.54);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.1);
 }
 
-.envelope-back {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(249, 244, 238, 0.96)),
-    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.02) 0 1px, transparent 1px 5px);
+.premium-hero-photo .printed-photo-image {
+  border-radius: 3px;
 }
 
-.envelope-flap {
-  position: absolute;
-  z-index: 2;
-  pointer-events: none;
-  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.04));
+.premium-address-card {
+  width: min(82vw, 500px);
+  margin-top: clamp(1.2rem, 4vw, 1.8rem);
+  padding: 1rem 1.15rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(14px);
+  animation: premium-title-in 700ms ease 320ms both;
 }
 
-.envelope-flap-top {
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 58%;
-  clip-path: polygon(0 0, 100% 0, 50% 100%);
-  background: linear-gradient(180deg, #ffffff, #f1e6db);
+.premium-address-card p {
+  font-size: clamp(1rem, 4vw, 1.25rem);
+  font-weight: 800;
+  line-height: 1.25;
 }
 
-.envelope-flap-bottom {
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 56%;
-  clip-path: polygon(0 100%, 100% 100%, 50% 0);
-  background: linear-gradient(0deg, #fff, #f3eadf);
+.premium-address-card p + p {
+  margin-top: 0.45rem;
 }
 
-.envelope-flap-left {
-  bottom: 0;
-  left: 0;
-  top: 0;
-  width: 52%;
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
-  background: linear-gradient(90deg, #fbf4ec, #fff);
-}
-
-.envelope-flap-right {
-  bottom: 0;
-  right: 0;
-  top: 0;
-  width: 52%;
-  clip-path: polygon(100% 0, 0 50%, 100% 100%);
-  background: linear-gradient(270deg, #fbf4ec, #fff);
-}
-
-.envelope-address {
-  position: absolute;
-  left: 7.5%;
-  top: 50%;
-  z-index: 4;
-  max-width: 45%;
-  transform: translateY(-50%);
-  color: #191512;
-  font-size: clamp(1.1rem, 2.7vw, 2.6rem);
+.premium-address-card span {
+  color: #fb7185;
   font-weight: 950;
-  line-height: 1.05;
 }
 
-.envelope-address p + p {
-  margin-top: 0.8rem;
+.premium-scroll-cue {
+  display: grid;
+  place-items: center;
+  margin-top: clamp(1.2rem, 4vw, 1.8rem);
+  height: 34px;
+  width: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 999px;
+  animation: premium-title-in 700ms ease 460ms both;
 }
 
-.envelope-address span {
-  color: #e11d48;
+.premium-scroll-cue span {
+  height: 7px;
+  width: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.76);
+  animation: premium-scroll-dot 1.8s ease-in-out infinite;
 }
+
 
 .printed-photo {
   position: relative;
@@ -255,18 +254,8 @@ select {
   background: #fff1f2;
 }
 
-.envelope-photo {
-  position: absolute;
-  right: 3%;
-  top: 50%;
-  z-index: 5;
-  width: min(34vw, 430px);
-  transform: translateY(-50%) rotate(6deg);
-  animation: photo-pop-in 760ms ease 180ms both, photo-sway 4200ms ease-in-out 1s infinite;
-}
-
 .letter-gradient-bridge {
-  height: 34vh;
+  height: 26vh;
   background:
     linear-gradient(
       180deg,
@@ -844,6 +833,55 @@ select {
   }
 }
 
+@keyframes premium-title-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes premium-photo-in {
+  from {
+    opacity: 0;
+    transform: translateY(26px) rotate(-0.6deg) scale(0.94);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(-1.6deg) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes premium-photo-float {
+  0%, 100% {
+    transform: translateY(0) rotate(-1.6deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(-0.7deg);
+  }
+}
+
+@keyframes premium-scroll-dot {
+  0% {
+    opacity: 0;
+    transform: translateY(-7px);
+  }
+  35%, 65% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
 @keyframes photo-pop-in {
   from {
     opacity: 0;
@@ -974,65 +1012,23 @@ select {
 }
 
 @media (max-width: 900px) {
-  .css-envelope,
-  .hero-envelope {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: min(94vw, 760px);
-    aspect-ratio: auto;
-    overflow: visible;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    isolation: auto;
+  .premium-hero-section {
+    min-height: 100svh;
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
   }
 
-  .envelope-back,
-  .envelope-flap {
-    display: none;
+  .premium-title-row {
+    margin-bottom: 1.35rem;
   }
 
-  .letter-title-row h1,
-  .letter-title-row p {
-    white-space: normal;
-  }
-
-  .envelope-address {
-    order: 2;
-    position: relative;
-    left: auto;
-    top: auto;
-    z-index: 6;
-    max-width: min(82vw, 360px);
-    margin-top: 1.25rem;
-    transform: none;
-    color: #fff;
-    text-align: center;
-    font-size: clamp(1.2rem, 7vw, 2rem);
-  }
-
-  .envelope-address p + p {
-    margin-top: 0.55rem;
-  }
-
-  .envelope-address span {
-    color: #fb7185;
-  }
-
-  .envelope-photo {
-    order: 1;
-    position: relative;
-    right: auto;
-    top: auto;
-    bottom: auto;
-    width: min(82vw, 360px);
-    animation: mobile-photo-sway 4200ms ease-in-out infinite;
-    transform: rotate(6deg);
-  }
-
-  .printed-photo {
+  .premium-hero-photo {
+    width: min(84vw, 380px);
     padding: 10px 10px 34px;
+  }
+
+  .premium-address-card {
+    width: min(84vw, 380px);
   }
 
   .timeline-track::before {
@@ -1142,8 +1138,10 @@ select {
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-up,
   .animate-rise,
-  .css-envelope,
-  .envelope-photo,
+  .premium-hero-photo,
+  .premium-address-card,
+  .premium-scroll-cue,
+  .premium-scroll-cue span,
   .scroll-reveal,
   .letter-title-row h1,
   .letter-title-row p,

@@ -38,7 +38,7 @@ export function GiftPage({ page, preview = false }: { page: LovePageDraft; previ
         </div>
       ) : null}
 
-      <EnvelopeHero
+      <PremiumHero
         title={title}
         introMessage={page.introMessage}
         creator={creator}
@@ -57,7 +57,7 @@ export function GiftPage({ page, preview = false }: { page: LovePageDraft; previ
   );
 }
 
-function EnvelopeHero({
+function PremiumHero({
   title,
   introMessage,
   creator,
@@ -71,15 +71,24 @@ function EnvelopeHero({
   mainPhoto?: string;
 }) {
   return (
-    <section className="letter-hero-section flex min-h-screen items-center px-5 py-8 sm:px-8">
+    <section className="letter-hero-section premium-hero-section flex min-h-screen items-center px-5 py-8 sm:px-8">
       <HeartParticles active tone="light" />
-      <div className="mx-auto flex w-full max-w-7xl flex-col items-center">
-        <div className="letter-title-row">
+      <div className="premium-hero-shell mx-auto flex w-full max-w-3xl flex-col items-center text-center">
+        <div className="letter-title-row premium-title-row">
           <h1>{title}</h1>
           <p>{introMessage || "Uma lembrança feita para abrir com calma, sorrir um pouco e guardar por perto."}</p>
         </div>
 
-        <EnvelopeCard creator={creator} recipient={recipient} mainPhoto={mainPhoto} className="hero-envelope" />
+        <PrintedPhoto mainPhoto={mainPhoto} className="premium-hero-photo" alt="Foto principal do presente" />
+
+        <div className="premium-address-card">
+          <p><span>De:</span> {creator}</p>
+          <p><span>Para:</span> {recipient}</p>
+        </div>
+
+        <div className="premium-scroll-cue" aria-hidden="true">
+          <span />
+        </div>
       </div>
     </section>
   );
@@ -228,35 +237,6 @@ function CountUpNumber({ value }: { value: number }) {
   }, [value]);
 
   return <span ref={ref}>{display.toLocaleString("pt-BR")}</span>;
-}
-
-function EnvelopeCard({
-  creator,
-  recipient,
-  mainPhoto,
-  className
-}: {
-  creator: string;
-  recipient: string;
-  mainPhoto?: string;
-  className?: string;
-}) {
-  return (
-    <div className={cn("css-envelope", className)}>
-      <div className="envelope-back" />
-      <div className="envelope-flap envelope-flap-top" />
-      <div className="envelope-flap envelope-flap-left" />
-      <div className="envelope-flap envelope-flap-right" />
-      <div className="envelope-flap envelope-flap-bottom" />
-
-      <div className="envelope-address">
-        <p><span>De:</span> {creator}</p>
-        <p><span>Para:</span> {recipient}</p>
-      </div>
-
-      <PrintedPhoto mainPhoto={mainPhoto} className="envelope-photo" alt="Foto colada no envelope" />
-    </div>
-  );
 }
 
 function BestPhotosReveal({ photos }: { photos: BestPhoto[] }) {

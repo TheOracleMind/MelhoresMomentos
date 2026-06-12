@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { GiftPage } from "@/components/gift-page";
+import { requireAdminUser } from "@/lib/admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { DbLovePage, DbMoment, LovePageDraft } from "@/lib/types";
 import { isExpired, mapDbPage } from "@/lib/utils";
@@ -18,7 +19,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     .eq("slug", slug)
     .single();
 
-  if (!page || page.status !== "active" || isExpired(page.expires_at)) {
+  const adminUser = await requireAdminUser();
+
+  if (!page || !canViewPage(page, Boolean(adminUser))) {
     return {
       title: "Melhores Momentos"
     };
@@ -73,7 +76,9 @@ export default async function PublicGiftPage({ params }: { params: Promise<{ slu
     .eq("slug", slug)
     .single();
 
-  if (!page || page.status !== "active" || isExpired(page.expires_at)) {
+  const adminUser = await requireAdminUser();
+
+  if (!page || !canViewPage(page, Boolean(adminUser))) {
     if (page?.status === "active" && isExpired(page.expires_at)) {
       await supabase.from("love_pages").update({ status: "expired" }).eq("id", page.id);
     }
@@ -84,6 +89,10 @@ export default async function PublicGiftPage({ params }: { params: Promise<{ slu
   const signed = await withSignedImages(mapped);
 
   return <GiftPage page={signed} />;
+}
+
+function canViewPage(page: Pick<DbLovePage, "status" | "expires_at">, isAdmin: boolean) {
+  return isAdmin || (page.status === "active" && !isExpired(page.expires_at));
 }
 
 async function withSignedImages(page: LovePageDraft) {

@@ -79,6 +79,8 @@ export async function confirmStripeCheckoutSession(sessionId: string, expectedUs
   return {
     lovePageId,
     paymentType,
+    amount: session.amount_total || plan.price,
+    currency: (session.currency || "brl").toUpperCase(),
     expiresAt,
     customerEmail,
     needsAccount: !page.user_id && !shouldAttachUser

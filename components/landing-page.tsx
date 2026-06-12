@@ -7,6 +7,7 @@ import { ArrowRight, Check, Gift, Heart, ImagePlus, Play, QrCode, Sparkles } fro
 import { ButtonLink } from "@/components/button";
 import { SiteFooter } from "@/components/site-footer";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { trackMetaPixelEvent } from "@/lib/meta-pixel";
 import { formatPrice, initialPlans } from "@/lib/plans";
 
 const steps = [
@@ -80,6 +81,7 @@ const faqs = [
 export function LandingPage() {
   useEffect(() => {
     trackAnalyticsEvent("landing_view");
+    trackMetaPixelEvent("PageView");
   }, []);
 
   function handleClick(event: MouseEvent<HTMLElement>) {

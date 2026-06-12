@@ -31,6 +31,7 @@ npm install
 
 ```bash
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_META_PIXEL_ID=...
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
@@ -78,6 +79,15 @@ O checkout usa `price_data` dinâmico, então não é obrigatório criar produto
 - R$29,90: página por 30 dias
 - R$9,90: renovação por 24 horas
 - R$19,90: renovação por 30 dias
+
+## Meta Pixel
+
+Configure `NEXT_PUBLIC_META_PIXEL_ID` com o ID do Pixel da Meta.
+
+Eventos enviados:
+
+- `PageView`: quando a pessoa entra na página de vendas.
+- `Purchase`: depois que `/checkout/success` confirma o pagamento na Stripe, com `value`, `currency`, `content_ids`, `content_type` e `content_name`.
 
 ## Deploy Na Vercel
 

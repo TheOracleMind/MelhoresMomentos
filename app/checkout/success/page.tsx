@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { ButtonLink } from "@/components/button";
+import { MetaPurchaseRedirect } from "@/components/meta-purchase-redirect";
 import { confirmStripeCheckoutSession } from "@/lib/payments";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -21,8 +21,10 @@ export default async function CheckoutSuccessPage({
   const { data: auth } = await supabase.auth.getUser();
 
   let redirectTo = "";
+  let purchase: Awaited<ReturnType<typeof confirmStripeCheckoutSession>> | null = null;
   try {
     const result = await confirmStripeCheckoutSession(sessionId, auth.user?.id, auth.user?.email || undefined);
+    purchase = result;
 
     if (auth.user || !result.needsAccount) {
       redirectTo = "/dashboard?checkout=success";
@@ -38,7 +40,16 @@ export default async function CheckoutSuccessPage({
     );
   }
 
-  redirect(redirectTo);
+  return (
+    <MetaPurchaseRedirect
+      redirectTo={redirectTo}
+      amount={purchase.amount}
+      currency={purchase.currency}
+      lovePageId={purchase.lovePageId}
+      paymentType={purchase.paymentType}
+      sessionId={sessionId}
+    />
+  );
 }
 
 function CheckoutMessage({ title, message }: { title: string; message: string }) {

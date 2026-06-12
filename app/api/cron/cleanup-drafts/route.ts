@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-// Called hourly by Vercel cron (vercel.json).
+// Runs once daily via Vercel cron (vercel.json).
 // Vercel automatically sends: Authorization: Bearer <CRON_SECRET>
 // Set CRON_SECRET in Vercel environment variables.
 export async function GET(request: Request) {
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   const supabase = createSupabaseAdminClient();
   const now = Date.now();
   const draftCutoff = new Date(now - 6 * 60 * 60 * 1000).toISOString();
-  const rateLimitCutoff = new Date(now - 60 * 60 * 1000).toISOString();
+  const rateLimitCutoff = new Date(now - 24 * 60 * 60 * 1000).toISOString();
 
   // Delete storage objects for unclaimed draft uploads older than 6 hours
   const { data: staleUploads } = await supabase
@@ -34,8 +34,8 @@ export async function GET(request: Request) {
     deletedDrafts = staleUploads.length;
   }
 
-  // Clean up old rate limit entries (older than 1 hour — no longer needed)
+  // Clean up rate limit entries older than 24 hours
   await supabase.from("rate_limit_attempts").delete().lt("created_at", rateLimitCutoff);
 
-  return NextResponse.json({ deletedDrafts });
+  return NextResponse.json({ ok: true, deletedDrafts });
 }
